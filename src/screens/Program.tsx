@@ -3,11 +3,11 @@ import { Icon, type IconName } from '../components/Icon'
 import { Screen, TopBar } from '../components/Layout'
 import { patient, pricing } from '../data/mock'
 
-const features: { icon: IconName; title: string; desc: string; warn?: boolean }[] = [
-  { icon: 'phone', title: 'AI 코치 전화 체크인', desc: '앱을 열지 않아도 2분 통화로 기록' },
-  { icon: 'chart', title: '개인 리포트', desc: '체중·식욕·수면 추이를 원장님과 공유' },
-  { icon: 'list', title: '유지 단계 생활습관 안내', desc: '근거 있는 이번 주 행동 가이드' },
-  { icon: 'bell', title: '상태가 나빠지면 의료진 확인', desc: '기준을 넘으면 원장님께 바로 전달', warn: true },
+const features: { icon: IconName; title: string; warn?: boolean }[] = [
+  { icon: 'phone', title: 'AI 코치 전화' },
+  { icon: 'list', title: '단약 단계별 가이드' },
+  { icon: 'chart', title: '원장님 공유 리포트' },
+  { icon: 'bell', title: '위험 시 내원 알림', warn: true },
 ]
 
 export default function Program() {
@@ -17,36 +17,51 @@ export default function Program() {
 
       <div className="stack">
         <span className="eyebrow eyebrow--accent">{patient.clinic} 연동</span>
-        <h1 className="h1">체중 유지 프로그램</h1>
-        <p className="lead">감량 이후에도 원장님과 연결된 채로 관리해요.</p>
+        <h1 className="h1">약이 줄수록, 비용도 줄어요</h1>
+        <p className="lead">식욕이 돌아오는 시기를 원장님과 함께 넘겨요.</p>
       </div>
 
-      <section className="card list" style={{ padding: '8px 20px' }}>
+      <section className="card feature-grid">
         {features.map((f) => (
-          <div className="feature" key={f.title}>
-            <div className={`badge-icon${f.warn ? ' badge-icon--warn' : ''}`}>
-              <Icon name={f.icon} size={18} />
-            </div>
-            <div>
-              <b>{f.title}</b>
-              <span>{f.desc}</span>
-            </div>
+          <div className="feature-grid__item" key={f.title}>
+            <span className={`badge-icon badge-icon--sm${f.warn ? ' badge-icon--warn' : ''}`}>
+              <Icon name={f.icon} size={15} />
+            </span>
+            {f.title}
           </div>
         ))}
       </section>
 
-      <section className="card price">
-        <span className="eyebrow">이용료</span>
-        <b className="price__value">월 {pricing.monthly}</b>
-        <span className="small">평균 {pricing.avgMonths}개월 이용 · 언제든 해지</span>
+      <section className="card">
+        <div className="section-title">
+          <span>이용료</span>
+          <span className="tag">첫 2주 무료</span>
+        </div>
+        {pricing.tiers.map((t, i) => (
+          <div className={`tier${i === 0 ? ' is-current' : ''}`} key={t.period}>
+            <div className="stack" style={{ gap: 0 }}>
+              <b style={{ fontSize: 14 }}>
+                {t.period} · {t.phase}
+              </b>
+              <span className="small">{t.calls}</span>
+            </div>
+            <b style={{ fontSize: 16 }}>월 {t.monthly}</b>
+          </div>
+        ))}
+        <div style={{ height: 1, background: 'var(--line-soft)' }} />
+        <span className="small" style={{ lineHeight: 1.5 }}>
+          {pricing.refund}
+        </span>
       </section>
 
       <div className="footer">
         <Link to="/setup" className="btn">
-          프로그램 시작하기
+          {pricing.trialDays / 7}주 무료로 시작하기
         </Link>
-        <span className="small" style={{ textAlign: 'center' }}>
-          약값·진료비는 병원에 별도로 내요 · 약 조절은 원장님이 결정해요
+        <span className="small" style={{ textAlign: 'center', lineHeight: 1.5 }}>
+          회사 복지포인트 결제 가능 · 언제든 해지
+          <br />
+          약값·진료비는 병원에 별도로 내요
         </span>
       </div>
     </Screen>
