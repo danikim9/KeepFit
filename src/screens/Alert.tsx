@@ -4,11 +4,17 @@ import { Icon } from '../components/Icon'
 import { Screen, TopBar } from '../components/Layout'
 import { patient, scenarios, visitSlots } from '../data/mock'
 import { useAppState } from '../state/AppState'
+import { useClinicLink, writeLink } from '../state/clinicLink'
 
 export default function Alert() {
-  const { scenario, bookedSlot, update } = useAppState()
-  const alert = scenarios[scenario].alert
-  const [slot, setSlot] = useState(bookedSlot ?? visitSlots[1])
+  const { scenario, bookedSlot: localBooked, update } = useAppState()
+  const link = useClinicLink()
+  const visit = link.visit // 병원 대시보드에서 보낸 내원 요청
+  const alert = scenarios[scenario].alert ?? (visit ? scenarios.risk.alert : undefined)
+  const slots = visit?.slots.length ? visit.slots : visitSlots
+  const bookedSlot = visit ? link.booked : localBooked
+  const [picked, setSlot] = useState<string | null>(null)
+  const slot = picked && slots.includes(picked) ? picked : (bookedSlot ?? slots[0])
 
   if (!alert) {
     return (
@@ -55,7 +61,7 @@ export default function Alert() {
         <div className="avatar" />
         <div className="stack" style={{ gap: 2 }}>
           <span className="small">원장님 메시지</span>
-          <span style={{ fontSize: 14, lineHeight: 1.55 }}>{alert.message}</span>
+          <span style={{ fontSize: 14, lineHeight: 1.55 }}>{visit?.message ?? alert.message}</span>
         </div>
       </section>
 
@@ -67,9 +73,9 @@ export default function Alert() {
         </section>
       ) : (
         <div className="stack" style={{ gap: 10 }}>
-          <span style={{ fontSize: 13, fontWeight: 600 }}>가능한 시간</span>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{visit ? '원장님이 제안한 시간' : '가능한 시간'}</span>
           <div className="slots">
-            {visitSlots.map((s) => (
+            {slots.map((s) => (
               <button key={s} type="button" className="chip" aria-pressed={slot === s} onClick={() => setSlot(s)}>
                 {s}
               </button>
@@ -84,7 +90,10 @@ export default function Alert() {
             홈으로
           </Link>
         ) : (
-          <button type="button" className="btn" onClick={() => update({ bookedSlot: slot })}>
+          <button type="button" className="btn" onClick={() => {
+              if (visit) writeLink({ booked: slot })
+              update({ bookedSlot: slot })
+            }}>
             {slot.replace('\n', ' ')} 예약하기
           </button>
         )}

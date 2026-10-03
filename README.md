@@ -5,17 +5,7 @@ GLP-1(위고비·마운자로) 감량 치료를 마친 환자의 **체중 유지
 
 병원이 치료 종료 시점에 환자를 초대하고(B2B2C), 환자는 매일 AI 코치 전화만 받으면 체중·식욕·수면이 기록됩니다. 위험 신호가 보이면 원장님이 내원을 요청합니다.
 
-## 자료 한눈에 보기
-
-| 자료 | 위치 | 설명 |
-| --- | --- | --- |
-| 환자 앱 (PWA) | 레포 루트 (`src/`) | 초대 → 프로그램 → 전화 설정 → 홈·통화·리포트·가이드·내원 요청. 실행 방법은 아래 |
-| 병원 대시보드 | [`clinic-dashboard/`](clinic-dashboard/) | 원장님용 목업. `index.html`을 브라우저로 열면 바로 동작 ([설명](clinic-dashboard/README.md)) |
-| 시장 분석 (TAM·SAM·SOM) | [`docs/market-analysis.html`](docs/market-analysis.html) | 근거 자료, 계산 과정, 한계, 출처. 다운로드해서 브라우저로 열기 |
-| 가이드 콘텐츠 근거 논문 | [`src/data/guides.ts`](src/data/guides.ts) | 근육·식욕·수면·체중 기록·요요 가이드의 수치와 논문 링크 |
-| 와이어프레임 (환자 앱 8화면) | [Claude 디자인 캔버스](https://claude.ai/artifact/RjFiCd5qQcEYxxS5Ja3itT) | 링크가 있으면 누구나 보기 가능 |
-
-두 화면은 같은 데모 환자(이지은, `risk` 시나리오: 72.6kg, 식욕 7일 평균 8.2)를 기준으로 맞춰져 있어요. 병원 대시보드에서 내원 요청을 보내는 장면과 환자 앱 08 화면이 이어지는 흐름입니다.
+- 와이어프레임: https://claude.ai/artifact/RjFiCd5qQcEYxxS5Ja3itT
 
 ## 실행
 
@@ -68,11 +58,28 @@ npm run dev
 2. **위험 신호**: "위험 신호 시나리오로" → 홈에 내원 요청 배너 → 통화 → 요약 → 내원 예약
 3. "처음부터"를 누르면 온보딩부터 다시 시작해요.
 
+## 병원 대시보드와 함께 보기
+
+`clinic-dashboard/index.html`은 원장님용 화면이에요. `npm run dev`로 띄우면 두 화면이 같은 주소에서 열려서 서로 연결돼요.
+
+- 환자 앱: `http://localhost:5173/#/home`
+- 병원 대시보드: `http://localhost:5173/clinic-dashboard/`
+
+브라우저 창 두 개에 각각 띄워 두면 이렇게 움직여요.
+
+1. 대시보드에서 이지은 → **내원 요청 보내기** → 시간 고르고 보내기 → 환자 앱 홈에 "원장님이 내원을 요청했어요" 배너, 알림 화면에 원장님이 고른 시간만 보여요.
+2. 환자 앱에서 시간 골라 **예약하기** → 대시보드에 "내원 예약 확정"과 내원 일정에 바로 반영돼요.
+3. 대시보드에서 **메모 보내기** → 태그를 고르고 보내면 환자 앱 홈 맨 위에 "새 메모"로 떠요. 환자가 **확인했어요**를 누르면 대시보드에 "환자가 읽음"이 떠요.
+
+연결은 데모용으로 브라우저 저장소(`localStorage`의 `keepfit-clinic-link`)를 같이 쓰는 방식이라 **같은 컴퓨터·같은 브라우저**에서만 동작해요. 실제 서비스에서는 이 부분을 서버로 바꾸면 돼요 (`src/state/clinicLink.ts`). 처음 상태로 돌리려면 환자 앱의 데모 → **처음부터**, 또는 대시보드 설정 → **데모 초기화**를 누르세요.
+
 ## 구조
 
 - `src/data/guides.ts` — 가이드 콘텐츠와 근거 논문 (STEP 1, SURMOUNT-4, Jensen 2024, Spiegel 2004, Tasali 2022, Wing 2006, Shukla 2015, 2025 GLP-1 영양 공동 권고)
 - `src/data/mock.ts` — 데모 데이터 (실서비스에서는 병원 치료 기록 + 보이스 에이전트 수집 데이터로 대체)
 - `src/state/AppState.tsx` — 설정·미션·시나리오 상태 (localStorage 저장)
+- `src/state/clinicLink.ts` — 병원 대시보드와 주고받는 내원 요청·예약·메모 (데모: localStorage 공유)
+- `clinic-dashboard/index.html` — 병원(원장님)용 대시보드
 - `src/screens/` — 화면별 컴포넌트
 - `public/manifest.webmanifest`, `public/sw.js` — PWA 설치·오프라인 캐시
 

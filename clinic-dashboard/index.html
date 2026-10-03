@@ -248,6 +248,22 @@ const init=()=>({tab:'patients',sel:'jieun',visit:{},offered:{},booked:{},memos:
  cfg:{time:'저녁 9:00',weight:true,appetite:true,miss:true,slots:OPEN.map(()=>true),tags:TAGS.map((_,i)=>i<8)}});
 let S=init(),toastT=null;
 
+/* ===== 환자 앱 연결 (같은 주소에서 열면 localStorage로 실시간 연결) ===== */
+const LINK_KEY='keepfit-clinic-link';
+const LINKED='jieun'; // 환자 앱 데모 계정 = 이지은
+const MSG='걱정할 단계는 아니에요. 지금 잡으면 충분히 돌아갈 수 있으니 이번 주에 한번 들러 주세요.';
+function readLink(){try{const r=localStorage.getItem(LINK_KEY);return Object.assign({visit:null,booked:null,memos:[],memoSeenAt:0},r?JSON.parse(r):{});}catch(e){return {visit:null,booked:null,memos:[],memoSeenAt:0};}}
+function writeLink(patch){try{localStorage.setItem(LINK_KEY,JSON.stringify(Object.assign(readLink(),patch)));}catch(e){}}
+function applyLink(announce){const L=readLink(),id=LINKED;
+ if(L.visit){S.visit[id]=true;S.offered[id]=L.visit.slots;}else{delete S.visit[id];delete S.offered[id];}
+ const before=S.booked[id];if(L.booked&&L.visit){S.booked[id]=L.booked;}else delete S.booked[id];
+ S.memoSeenAt=L.memoSeenAt||0;
+ if(L.memos.length){S.memos[id]=[{tags:['잘하고 있어요','지금 용량 유지'],t:'2일 전'}].concat(L.memos.map(m=>({tags:m.tags,t:'오늘',at:m.at})));}
+ if(announce&&L.booked&&L.booked!==before)toast(`${P(id).name}님이 ${slot1(L.booked)}로 예약했어요`);
+}
+applyLink(false);
+window.addEventListener('storage',e=>{if(e.key===LINK_KEY||e.key===null){const seen=S.memoSeenAt;applyLink(true);if(S.memoSeenAt>seen)toast('이지은님이 메모를 확인했어요');render();}});
+
 /* ===== helpers ===== */
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const chip=(k,t)=>`<span class="chip ${k}">${t}</span>`;
@@ -304,7 +320,7 @@ function vPatients(){
    <div class="tiles">${p.t.map(([l,v,u,s,c,g])=>`<div class="tile ${c}"><span class="l">${l}</span><span class="v">${v}<small>${u}</small></span><span class="s">${s}</span>${g==='w'?spark(p.w,p.band):g==='a'?bars(p.a):''}</div>`).join('')}</div>
    <div class="say"><small>${p.call}</small>${p.said}</div>
    ${actions}
-   ${last&&!S.sheet&&!S.vsheet?`<span class="faint small">마지막 메모 · ${last.t} · ${esc(last.tags.join(', '))}</span>`:''}
+   ${last&&!S.sheet&&!S.vsheet?`<span class="faint small">마지막 메모 · ${last.t} · ${esc(last.tags.join(', '))}${p.id===LINKED&&last.at?(S.memoSeenAt>=last.at?' · <b style="color:var(--accent-dark)">환자가 읽음</b>':' · 아직 안 읽음'):''}</span>`:''}
    ${p.id==='jieun'?`<details class="raw"><summary>통화 원문 보기</summary><div class="bubbles">${TRANSCRIPT.map(([w,t])=>`<div class="bb ${w}">${t}</div>`).join('')}</div></details>`:''}
   </div>
  </div>`;
@@ -391,6 +407,7 @@ function vSettings(){const c=S.cfg;return `
     <div class="slotgrid">${OPEN.map((o,i)=>`<button class="tag" data-cslot="${i}" aria-pressed="${c.slots[i]}">${o.replace('\n','<br>')}</button>`).join('')}</div></div>
    <div class="card"><div class="between"><h2>자주 쓰는 메모 태그</h2><span class="faint small">켠 태그만 메모 보내기에 보여요</span></div>
     <div class="taggrid">${TAGS.map(([t],i)=>`<button class="tag" data-ctag="${i}" aria-pressed="${c.tags[i]}">${t}</button>`).join('')}</div></div>
+   <div class="card"><div class="between"><div><h2>데모 초기화</h2><p class="muted s13" style="margin-top:4px">보낸 내원 요청·예약·메모를 지우고 처음 상태로 돌려요. 환자 앱도 함께 초기화돼요.</p></div><button class="btn sm" data-act="demo-reset">초기화</button></div></div>
   </div>
  </div>`;}
 
@@ -427,11 +444,15 @@ document.addEventListener('click',e=>{
  const a=d.act,p=P(S.sel);
  if(a==='vsheet'){S.vsheet=true;S.sheet=false;S.vdraft=[];render();}
  else if(a==='vsheet-close'){S.vsheet=false;S.vdraft=[];render();}
- else if(a==='visit'){S.offered[p.id]=S.vdraft.map(i=>OPEN[i]);S.visit[p.id]=true;S.vsheet=false;S.vdraft=[];render();toast(`${p.name}님 앱으로 내원 요청과 시간 ${S.offered[p.id].length}개를 보냈어요`);bookLater(p.id);}
+ else if(a==='visit'){S.offered[p.id]=S.vdraft.map(i=>OPEN[i]);S.visit[p.id]=true;S.vsheet=false;S.vdraft=[];
+   if(p.id===LINKED)writeLink({visit:{slots:S.offered[p.id],message:MSG,sentAt:Date.now()},booked:null});else bookLater(p.id);
+   render();toast(`${p.name}님 앱으로 내원 요청과 시간 ${S.offered[p.id].length}개를 보냈어요`);}
  else if(a==='sheet'){S.sheet=true;S.vsheet=false;S.draft=[];render();}
  else if(a==='sheet-close'){S.sheet=false;S.draft=[];render();}
- else if(a==='memo'){(S.memos[p.id]=S.memos[p.id]||[]).push({tags:S.draft.slice(),t:'방금'});S.sheet=false;S.draft=[];render();toast(`${p.name}님 앱 홈에 메모가 떴어요`);}
+ else if(a==='memo'){const at=Date.now();(S.memos[p.id]=S.memos[p.id]||[]).push({tags:S.draft.slice(),t:'방금',at});
+   if(p.id===LINKED){const L=readLink();writeLink({memos:L.memos.concat([{tags:S.draft.slice(),lines:S.draft.map(t=>SENT[t]),at}])});}S.sheet=false;S.draft=[];render();toast(`${p.name}님 앱 홈에 메모가 떴어요`);}
  else if(a==='stable'){S.showStable=true;render();}
+ else if(a==='demo-reset'){try{localStorage.removeItem(LINK_KEY);}catch(e){}S=init();render();toast('처음 상태로 돌렸어요');}
  else if(a==='toast')toast(d.msg);
  else if(a==='copy'){const txt='yujicare.kr/c/[병원코드]';try{navigator.clipboard.writeText(txt).then(()=>toast('링크를 복사했어요'),()=>toast(txt));}catch(err){toast(txt);}}
 });

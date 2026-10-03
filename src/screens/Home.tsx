@@ -2,12 +2,56 @@ import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Screen } from '../components/Layout'
 import { missions, patient, program, scenarios, stages } from '../data/mock'
+import { useEffect } from 'react'
 import { useAppState } from '../state/AppState'
+import { clearLink, timeAgo, useClinicLink, writeLink } from '../state/clinicLink'
 
 export default function Home() {
-  const { scenario, callTime, missionsDone, bookedSlot, update, reset } = useAppState()
+  const { scenario, callTime, missionsDone, bookedSlot: localBooked, update, reset } = useAppState()
+  const link = useClinicLink()
+  // 병원 대시보드에서 내원 요청이 오면 위험 신호 시나리오로 맞춰요
+  useEffect(() => {
+    if (link.visit && scenario !== 'risk') update({ scenario: 'risk' })
+  }, [link.visit, scenario, update])
   const data = scenarios[scenario]
   const isRisk = scenario === 'risk'
+  const bookedSlot = link.visit ? link.booked : localBooked
+  const memo = link.memos[link.memos.length - 1]
+  const memoIsNew = !!memo && memo.at > link.memoSeenAt
+  const memoCard = memo ? (
+    <section
+      className={`card${memoIsNew ? '' : ' card--dashed'}`}
+      style={{ flexDirection: 'row', gap: 12, ...(memoIsNew ? { borderColor: 'var(--accent)', borderWidth: 1.5 } : {}) }}
+    >
+      <div className="avatar" />
+      <div className="stack spacer" style={{ gap: 6 }}>
+        <span className="small">
+          {patient.doctor} 원장님 · {timeAgo(memo.at)}
+          {memoIsNew && <b style={{ marginLeft: 6, color: 'var(--accent)' }}>새 메모</b>}
+        </span>
+        {memo.lines.map((l) => (
+          <span key={l} style={{ fontSize: 14, lineHeight: 1.5 }}>
+            · {l}
+          </span>
+        ))}
+        {memoIsNew && (
+          <button type="button" className="btn btn--small" style={{ alignSelf: 'flex-start', border: '1px solid var(--line)' }} onClick={() => writeLink({ memoSeenAt: Date.now() })}>
+            확인했어요
+          </button>
+        )}
+      </div>
+    </section>
+  ) : (
+    <section className="card card--dashed" style={{ flexDirection: 'row', gap: 12 }}>
+      <div className="avatar" />
+      <div className="stack" style={{ gap: 2 }}>
+        <span className="small">{patient.doctor} 원장님 · 2일 전</span>
+        <span style={{ fontSize: 14, lineHeight: 1.5 }}>
+          체중 잘 유지하고 계세요. 다음 주에 0.25mg으로 한 단계 더 줄여볼게요.
+        </span>
+      </div>
+    </section>
+  )
   const inRange = Math.abs(data.today.weight - patient.targetWeight) <= patient.rangeKg
 
   return (
@@ -19,7 +63,7 @@ export default function Home() {
         </div>
         <Link to={isRisk ? '/alert' : '/summary'} className="icon-btn" aria-label="알림" style={{ color: 'var(--text)' }}>
           <Icon name="bell" />
-          {isRisk && !bookedSlot && <span className="dot" />}
+          {((isRisk && !bookedSlot) || memoIsNew) && <span className="dot" />}
         </Link>
       </header>
 
@@ -37,6 +81,8 @@ export default function Home() {
           <Icon name="forward" size={18} />
         </Link>
       )}
+
+      {memoIsNew && memoCard}
 
       <section className="card">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -114,22 +160,20 @@ export default function Home() {
         })}
       </section>
 
-      <section className="card card--dashed" style={{ flexDirection: 'row', gap: 12 }}>
-        <div className="avatar" />
-        <div className="stack" style={{ gap: 2 }}>
-          <span className="small">{patient.doctor} 원장님 · 2일 전</span>
-          <span style={{ fontSize: 14, lineHeight: 1.5 }}>
-            체중 잘 유지하고 계세요. 다음 주에 0.25mg으로 한 단계 더 줄여볼게요.
-          </span>
-        </div>
-      </section>
+      {!memoIsNew && memoCard}
 
       <div className="demo-bar" aria-label="데모 조작">
         <span>데모</span>
         <button type="button" onClick={() => update({ scenario: isRisk ? 'normal' : 'risk', bookedSlot: null })}>
           {isRisk ? '정상 시나리오로' : '위험 신호 시나리오로'}
         </button>
-        <button type="button" onClick={reset}>
+        <button
+          type="button"
+          onClick={() => {
+            clearLink()
+            reset()
+          }}
+        >
           처음부터
         </button>
       </div>
