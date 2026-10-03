@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KeepFit · 감량 이후의 유지</title>
+<meta name="description" content="GLP-1 감량 치료를 마친 환자의 체중 유지 프로그램. AI 코치 전화 한 통으로 기록하고, 위험 신호는 원장님께 바로 전달해요.">
+<meta property="og:title" content="KeepFit · 약은 줄여도, 관리는 계속되도록">
+<meta property="og:description" content="GLP-1 감량 치료 이후, AI 전화 체크인과 의원 후속 관리로 체중 유지를 돕는 서비스">
+<meta name="theme-color" content="#F4F4F2">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Tokens follow the patient app (src/styles.css) and clinic dashboard. */
+:root{
+  --ground:#F4F4F2;--surface:#FFFFFF;--ink:#1A1A1A;--muted:#5C5C58;--faint:#9A9A95;--line:#D6D6D2;--div:#E6E6E2;
+  --accent:#2F5BD3;--accent-dark:#1E3F9E;--accent-tint:#E9EEFB;--on-accent:#FFFFFF;
+  --warn:#B4500B;--warn-tint:#FDF1E7;--warn-line:#F2C9A6;
+  --danger:#B42318;--danger-tint:#FDECEA;--neutral-tint:#EDEDEA;--bar:#C9C9C4;
+  --inverse:#1A1A1A;--inverse-fg:#FFFFFF;--phone:#1A1A1A;
+  --font:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#121211;--surface:#1C1C1A;--ink:#EDEDEA;--muted:#A9A9A3;--faint:#7A7A73;--line:#3A3A36;--div:#2B2B28;
+  --accent:#6F8FF0;--accent-dark:#AFC0F7;--accent-tint:#1E2846;--on-accent:#0E1430;
+  --warn:#EE9F68;--warn-tint:#33231A;--warn-line:#6A4126;
+  --danger:#F2867B;--danger-tint:#3A1C19;--neutral-tint:#2A2A27;--bar:#55554F;
+  --inverse:#2A2A27;--inverse-fg:#F4F4F2;--phone:#000;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#121211;--surface:#1C1C1A;--ink:#EDEDEA;--muted:#A9A9A3;--faint:#7A7A73;--line:#3A3A36;--div:#2B2B28;
+  --accent:#6F8FF0;--accent-dark:#AFC0F7;--accent-tint:#1E2846;--on-accent:#0E1430;
+  --warn:#EE9F68;--warn-tint:#33231A;--warn-line:#6A4126;
+  --danger:#F2867B;--danger-tint:#3A1C19;--neutral-tint:#2A2A27;--bar:#55554F;
+  --inverse:#2A2A27;--inverse-fg:#F4F4F2;--phone:#000;color-scheme:dark}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ground);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+section{padding:96px 0}
+.eyebrow{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.02em;margin-bottom:12px}
+h2{font-size:clamp(26px,3.4vw,38px);line-height:1.3;letter-spacing:-.02em;font-weight:700;max-width:760px}
+.lead{font-size:17px;color:var(--muted);max-width:640px;margin-top:14px}
+.card{background:var(--surface);border:1px solid var(--div);border-radius:20px;padding:24px}
+.btn{display:inline-flex;align-items:center;gap:8px;font:600 15px var(--font);border-radius:12px;padding:13px 20px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .15s,color .15s,opacity .15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{opacity:.9;color:var(--on-accent)}
+.btn:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+/* nav */
+nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--ground) 86%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--div)}
+nav .wrap{display:flex;align-items:center;gap:24px;height:60px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;letter-spacing:-.01em}
+.logo img{width:26px;height:26px}
+nav .links{display:flex;gap:22px;font-size:14px;color:var(--muted);margin-left:auto}
+nav .links a:hover{color:var(--ink)}
+nav .btn{padding:8px 14px;font-size:13px}
+
+/* hero */
+.hero{padding:72px 0 88px}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--accent-dark);background:var(--accent-tint);border-radius:999px;padding:6px 12px;margin-bottom:22px}
+.pill .dot{width:6px;height:6px;border-radius:3px;background:var(--accent)}
+.hero h1{font-size:clamp(36px,5.2vw,58px);line-height:1.18;letter-spacing:-.03em;font-weight:700}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .lead{font-size:18px;margin-top:20px}
+.hero .ctas{display:flex;gap:10px;flex-wrap:wrap;margin-top:32px}
+.hero .note{font-size:13px;color:var(--faint);margin-top:16px}
+
+/* hero visual: phone (AI call) + dashboard card */
+.visual{position:relative;height:560px}
+.phone{position:absolute;right:0;top:0;width:280px;height:560px;background:var(--phone);border-radius:42px;padding:10px;box-shadow:0 24px 60px rgba(0,0,0,.18)}
+.screen{width:100%;height:100%;border-radius:33px;background:#F4F4F2;color:#1A1A1A;overflow:hidden;display:flex;flex-direction:column;padding:34px 16px 16px;gap:10px}
+.call-head{text-align:center}
+.call-head .avatar{width:52px;height:52px;border-radius:26px;background:#2F5BD3;margin:0 auto 8px;display:grid;place-items:center}
+.call-head b{display:block;font-size:15px}
+.call-head span{font-size:12px;color:#5C5C58}
+.bub{max-width:82%;font-size:12.5px;line-height:1.45;padding:9px 11px;border-radius:14px}
+.bub.ai{background:#fff;border:1px solid #E6E6E2;border-top-left-radius:4px}
+.bub.me{background:#2F5BD3;color:#fff;align-self:flex-end;border-top-right-radius:4px}
+.rec{margin-top:auto;background:#fff;border:1px solid #E6E6E2;border-radius:14px;padding:10px 12px}
+.rec small{font-size:11px;color:#9A9A95;font-weight:600}
+.rec .vals{display:flex;justify-content:space-between;margin-top:4px;font-size:12px;color:#5C5C58}
+.rec .vals b{display:block;font-size:16px;color:#1A1A1A}
+.rec .vals .hi b{color:#B42318}
+.dash{position:absolute;left:-40px;bottom:120px;width:250px;background:var(--surface);border:1px solid var(--div);border-radius:18px;padding:16px;box-shadow:0 18px 44px rgba(0,0,0,.12)}
+.dash .top{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted);font-weight:600}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;border-radius:999px;padding:3px 8px}
+.tag.risk{color:var(--danger);background:var(--danger-tint)}
+.tag.ok{color:var(--accent-dark);background:var(--accent-tint)}
+.tag::before{content:"";width:5px;height:5px;border-radius:3px;background:currentColor}
+.dash .who{display:flex;align-items:center;justify-content:space-between;margin:10px 0 2px}
+.dash .who b{font-size:16px}
+.dash .sig{font-size:12px;color:var(--danger)}
+.spark{display:flex;align-items:flex-end;gap:5px;height:44px;margin:12px 0}
+.spark i{flex:1;background:var(--bar);border-radius:3px}
+.spark i.hot{background:var(--warn)}
+.dash .act{display:flex;gap:6px}
+.dash .act span{flex:1;text-align:center;font-size:12px;font-weight:600;border-radius:9px;padding:8px 0;border:1px solid var(--div)}
+.dash .act span.go{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.link-badge{position:absolute;left:-16px;bottom:372px;font-size:12px;font-weight:600;color:var(--accent-dark);background:var(--accent-tint);border-radius:999px;padding:6px 12px;display:flex;align-items:center;gap:6px}
+
+/* problem stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+.stat .num{font-size:clamp(40px,5vw,56px);font-weight:700;letter-spacing:-.03em;line-height:1.1;color:var(--accent)}
+.stat p{font-size:16px;font-weight:600;margin-top:10px}
+.stat small{display:block;font-size:12px;color:var(--faint);margin-top:6px}
+.gap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+.gap .card{padding:20px}
+.gap b{font-size:15px}
+.gap p{font-size:14px;color:var(--muted);margin-top:4px}
+
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:40px;counter-reset:step}
+.step{position:relative}
+.step .n{width:32px;height:32px;border-radius:16px;background:var(--accent-tint);color:var(--accent-dark);font-weight:700;font-size:14px;display:grid;place-items:center;margin-bottom:16px}
+.step b{display:block;font-size:17px}
+.step p{font-size:14px;color:var(--muted);margin-top:6px}
+.step{border-top:2px solid var(--div);padding-top:20px}
+.step:first-child{border-top-color:var(--accent)}
+.disclaim{margin-top:20px;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center}
+
+/* audience split */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:40px}
+.split .card{padding:32px}
+.who-h{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.who-h .ico{width:36px;height:36px;border-radius:10px;background:var(--accent-tint);color:var(--accent);display:grid;place-items:center}
+.who-h h3{font-size:20px;letter-spacing:-.01em}
+.split .sub{font-size:15px;color:var(--muted);margin-bottom:20px}
+.feat{display:flex;gap:14px;padding:16px 0;border-top:1px solid var(--div)}
+.feat .k{flex:none;width:22px;color:var(--accent);font-weight:700;font-size:14px;padding-top:1px}
+.feat b{display:block;font-size:15px}
+.feat p{font-size:14px;color:var(--muted);margin-top:2px}
+
+/* sync strip */
+.sync{background:var(--inverse);color:var(--inverse-fg);border-radius:24px;padding:48px;display:grid;grid-template-columns:1fr 1.2fr;gap:40px;align-items:center}
+.sync h2{color:var(--inverse-fg)}
+.sync .lead{color:color-mix(in srgb,var(--inverse-fg) 70%,transparent)}
+.sync .ctas{margin-top:28px;display:flex;gap:10px;flex-wrap:wrap}
+.sync .btn{background:transparent;color:var(--inverse-fg);border-color:color-mix(in srgb,var(--inverse-fg) 30%,transparent)}
+.sync .btn.primary{background:#fff;color:#1A1A1A;border-color:#fff}
+.lane{display:grid;grid-template-columns:1fr auto 1fr;gap:8px 12px;font-size:14px;align-items:center}
+.lane .h{font-size:12px;font-weight:600;opacity:.6}
+.lane .l,.lane .r{background:color-mix(in srgb,var(--inverse-fg) 8%,transparent);border-radius:10px;padding:10px 12px}
+.lane .r{text-align:right}
+.lane .a{font-size:16px;color:#9AAEE6;text-align:center}
+.lane .a.up{color:#E59A62}
+
+/* pricing */
+.price-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-top:40px}
+.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:20px}
+.tier{border:1px solid var(--div);border-radius:14px;padding:16px}
+.tier .p{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.tier .p small{font-size:13px;font-weight:500;color:var(--muted)}
+.tier b{display:block;font-size:13px;margin-top:8px}
+.tier span{font-size:12px;color:var(--muted)}
+.tier.free{background:var(--accent-tint);border-color:transparent}
+.tier.free .p{color:var(--accent-dark)}
+.perks{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+.perks span{font-size:13px;background:var(--neutral-tint);border-radius:999px;padding:5px 12px;color:var(--muted)}
+.clinic-price .p{font-size:40px;font-weight:700;letter-spacing:-.03em;margin:14px 0 4px}
+.clinic-price .p small{font-size:16px;font-weight:500;color:var(--muted)}
+.clinic-price ul{list-style:none;margin-top:18px;display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--muted)}
+.clinic-price li::before{content:"✓";color:var(--accent);font-weight:700;margin-right:8px}
+.fine{font-size:13px;color:var(--faint);margin-top:16px}
+
+/* evidence */
+.refs{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:36px}
+.ref{display:block;padding:18px 20px;transition:border-color .15s}
+.ref:hover{border-color:var(--accent)}
+.ref b{font-size:15px}
+.ref p{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* final cta */
+.final{text-align:center;padding:110px 0 96px}
+.final h2{margin:0 auto}
+.final .lead{margin:16px auto 0}
+.final .ctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+footer{border-top:1px solid var(--div);padding:28px 0;font-size:13px;color:var(--faint)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a:hover{color:var(--ink)}
+
+/* reveal on scroll */
+.rv{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+
+@media (max-width:1100px){
+  .hero .wrap{grid-template-columns:1fr}
+  .visual{height:auto;display:flex;flex-direction:column;align-items:center;gap:16px}
+  .phone,.dash{position:relative;right:auto;left:auto;bottom:auto}
+  .phone{width:270px;height:540px}
+  .dash{width:100%;max-width:320px}
+  .link-badge{position:static;order:1}
+  .dash{order:2}
+  .sync{grid-template-columns:1fr;padding:32px}
+  .price-grid{grid-template-columns:1fr}
+}
+@media (max-width:760px){
+  section{padding:72px 0}
+  .wrap{padding:0 16px}
+  nav .links{display:none}
+  nav .btn{margin-left:auto}
+  .stats,.gap,.split,.refs{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr 1fr;gap:28px 16px}
+  .tiers{grid-template-columns:1fr 1fr}
+  .lane{font-size:13px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#top"><img src="../icon.svg" alt="">KeepFit</a>
+    <div class="links">
+      <a href="#problem">문제</a>
+      <a href="#how">작동 방식</a>
+      <a href="#features">기능</a>
+      <a href="#pricing">요금</a>
+      <a href="#evidence">근거</a>
+    </div>
+    <a class="btn primary" href="../demo/">연동 데모 보기</a>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <span class="pill"><span class="dot"></span>GLP-1 감량 치료 이후 체중 유지 프로그램</span>
+      <h1>약은 줄여도,<br><em>관리는 계속</em>되도록</h1>
+      <p class="lead">위고비·마운자로로 감량을 마친 뒤가 진짜 시작이에요. 환자는 매일 AI 코치 전화만 받으면 체중·식욕·수면이 기록되고, 위험 신호가 보이면 원장님이 바로 내원을 요청해요.</p>
+      <div class="ctas">
+        <a class="btn primary" href="../demo/">원장님 ⇄ 환자 연동 데모</a>
+        <a class="btn" href="../">환자 앱 체험하기</a>
+      </div>
+      <p class="note">첫 2주 무료 · 의원에서 초대받아 시작해요</p>
+    </div>
+
+    <div class="visual" aria-hidden="true">
+      <div class="phone">
+        <div class="screen">
+          <div class="call-head">
+            <div class="avatar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></div>
+            <b>AI 코치</b><span>통화 중 · 1:24</span>
+          </div>
+          <div class="bub ai">오늘 식욕은 10점 중 몇 점이에요?</div>
+          <div class="bub me">9점이요. 하루 종일 배고팠어요.</div>
+          <div class="bub ai">아침 체중도 알려 주세요.</div>
+          <div class="bub me">72.6kg이요.</div>
+          <div class="rec">
+            <small>자동 기록됨</small>
+            <div class="vals">
+              <div class="hi"><b>72.6</b>체중 kg</div>
+              <div class="hi"><b>9</b>식욕</div>
+              <div><b>5h</b>수면</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="link-badge">⇄ 실시간 공유</div>
+      <div class="dash">
+        <div class="top">원장님 대시보드<span>확인 필요 1</span></div>
+        <div class="who"><b>이지은</b><span class="tag risk">위험</span></div>
+        <div class="sig">체중 범위(68–72) 초과 · 식욕 7일 평균 8.2</div>
+        <div class="spark"><i style="height:38%"></i><i style="height:42%"></i><i style="height:40%"></i><i style="height:52%"></i><i style="height:60%"></i><i class="hot" style="height:78%"></i><i class="hot" style="height:92%"></i></div>
+        <div class="act"><span class="go">내원 요청</span><span>메모 보내기</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap">
+    <p class="eyebrow rv">문제</p>
+    <h2 class="rv">약을 끊으면 체중이 돌아오고,<br>의원은 그 사이를 모릅니다</h2>
+    <div class="stats">
+      <div class="card stat rv"><div class="num">2/3</div><p>단약 1년 후 다시 찌는 감량분</p><small>STEP 1 연장 연구 · Wilding 2022</small></div>
+      <div class="card stat rv"><div class="num">65%</div><p>비당뇨 사용자 1년 내 투약 중단</p><small>JAMA Netw Open 2025 · Rodriguez</small></div>
+      <div class="card stat rv"><div class="num">약 40%</div><p>투약 중 빠진 체중 중 근육 등 제지방</p><small>STEP 1 DXA · Wilding 2021</small></div>
+    </div>
+    <div class="gap">
+      <div class="card rv"><b>내원 사이의 공백</b><p>다음 진료까지 환자 상태를 알 수 없어요.</p></div>
+      <div class="card rv"><b>후속 연락의 부담</b><p>환자마다 연락하려면 인력과 시간이 들어요.</p></div>
+      <div class="card rv"><b>요요는 신뢰 하락으로</b><p>체중이 돌아오면 치료 만족도도 함께 떨어져요.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how" style="background:var(--surface);border-top:1px solid var(--div);border-bottom:1px solid var(--div)">
+  <div class="wrap">
+    <p class="eyebrow rv">작동 방식</p>
+    <h2 class="rv">AI 전화 한 통으로,<br>환자의 일상을 의원의 후속 관리로</h2>
+    <div class="flow">
+      <div class="step rv"><div class="n">1</div><b>AI 체크인</b><p>정해 둔 시간에 AI 코치가 전화해 식욕·체중·수면을 물어요. 앱을 열 필요가 없어요.</p></div>
+      <div class="step rv"><div class="n">2</div><b>기록·요약</b><p>통화 내용이 자동으로 기록되고, 리포트와 이번 주 미션으로 정리돼요.</p></div>
+      <div class="step rv"><div class="n">3</div><b>의료진 확인</b><p>기준을 넘으면 원장님 대시보드의 '확인 필요'로 바로 올라가요.</p></div>
+      <div class="step rv"><div class="n">4</div><b>후속 관리</b><p>원장님이 내원을 요청하거나 메모를 보내면 환자 앱에 바로 떠요.</p></div>
+    </div>
+    <p class="disclaim rv">ⓘ 약물 감량·중단 결정은 의료진이 합니다. KeepFit은 그 사이의 상태 확인과 생활습관 관리를 돕습니다.</p>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <p class="eyebrow rv">기능</p>
+    <h2 class="rv">환자는 전화만 받고,<br>원장님은 챙길 환자만 봅니다</h2>
+    <div class="split">
+      <div class="card rv">
+        <div class="who-h"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2"/></svg></span><h3>환자 앱</h3></div>
+        <p class="sub">기록하는 수고 없이, 내 단계에 맞는 관리</p>
+        <div class="feat"><span class="k">01</span><div><b>AI 코치 전화</b><p>2분 통화로 체중·식욕·수면이 자동 기록돼요. 못 받으면 문자로 대신해요.</p></div></div>
+        <div class="feat"><span class="k">02</span><div><b>주간·월간 리포트</b><p>유지 범위 ±2kg, 식욕 주의 기준을 한눈에 보고 원장님과 공유해요.</p></div></div>
+        <div class="feat"><span class="k">03</span><div><b>단약 로드맵과 가이드</b><p>근육 지키기·식욕 다루기·잠과 식욕 — 논문 근거가 있는 이번 주 미션.</p></div></div>
+        <div class="feat"><span class="k">04</span><div><b>내원 요청·예약</b><p>원장님이 열어 둔 시간 중 하나를 골라 바로 예약해요.</p></div></div>
+      </div>
+      <div class="card rv">
+        <div class="who-h"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg></span><h3>원장님 대시보드</h3></div>
+        <p class="sub">인력 없이 이어지는 후속 관리</p>
+        <div class="feat"><span class="k">01</span><div><b>확인 필요 환자 목록</b><p>어젯밤 AI 통화 기준으로 위험·주의 환자가 자동으로 위에 올라와요.</p></div></div>
+        <div class="feat"><span class="k">02</span><div><b>추이와 통화 원문</b><p>체중·식욕 그래프와 환자가 실제로 한 말을 함께 봐요.</p></div></div>
+        <div class="feat"><span class="k">03</span><div><b>범위만 고르는 내원 요청</b><p>기간과 시간대만 고르면 빈 진료 시간이 자동으로 제안돼요.</p></div></div>
+        <div class="feat"><span class="k">04</span><div><b>태그 메모와 읽음 확인</b><p>태그만 눌러 메모를 보내고, 환자가 읽었는지 확인해요.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="sync rv">
+      <div>
+        <p class="eyebrow" style="color:#9AAEE6">두 화면의 연결</p>
+        <h2>이상 신호에서 예약까지,<br>실시간으로 이어집니다</h2>
+        <p class="lead">같은 기록을 원장님과 환자가 함께 봐요. 데모에서 두 화면을 나란히 띄워 직접 확인해 보세요.</p>
+        <div class="ctas">
+          <a class="btn primary" href="../demo/">연동 데모 열기</a>
+          <a class="btn" href="../clinic-dashboard/">대시보드만 보기</a>
+        </div>
+      </div>
+      <div class="lane" aria-label="원장님 대시보드와 환자 앱이 주고받는 데이터">
+        <span class="h">원장님 대시보드</span><span></span><span class="h" style="text-align:right">환자 앱</span>
+        <span class="l">위험 환자로 자동 표시</span><span class="a up">←</span><span class="r">AI 전화에 응답</span>
+        <span class="l">기간·시간대만 선택</span><span class="a">→</span><span class="r">홈에 내원 요청 배너</span>
+        <span class="l">예약 확정 · 일정 반영</span><span class="a up">←</span><span class="r">시간 골라 예약</span>
+        <span class="l">태그로 메모 전송</span><span class="a">→</span><span class="r">홈 맨 위에 새 메모</span>
+        <span class="l">환자가 읽음 표시</span><span class="a up">←</span><span class="r">확인했어요</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" style="background:var(--surface);border-top:1px solid var(--div);border-bottom:1px solid var(--div)">
+  <div class="wrap">
+    <p class="eyebrow rv">요금</p>
+    <h2 class="rv">약이 줄수록, 비용도 줄어요</h2>
+    <p class="lead rv">서비스 이용료만 받아요. 약값·진료비는 병원에 따로 내요.</p>
+    <div class="price-grid">
+      <div class="card rv" style="background:var(--ground)">
+        <b style="font-size:17px">환자 · 단계별 구독</b>
+        <div class="tiers">
+          <div class="tier free"><div class="p">무료</div><b>첫 2주</b><span>체험</span></div>
+          <div class="tier" style="background:var(--surface)"><div class="p">4.9<small>만원/월</small></div><b>1–3개월 · 집중기</b><span>매일 통화</span></div>
+          <div class="tier" style="background:var(--surface)"><div class="p">2.9<small>만원/월</small></div><b>4–6개월 · 적응기</b><span>주 2–3회</span></div>
+          <div class="tier" style="background:var(--surface)"><div class="p">1.9<small>만원/월</small></div><b>7개월~ · 혼자서 유지</b><span>주 1회</span></div>
+        </div>
+        <div class="perks">
+          <span>6개월 이용 시 약 23.4만원</span>
+          <span>목표 범위(±2kg) 유지 시 마지막 달 환급</span>
+          <span>회사 복지포인트 결제</span>
+        </div>
+      </div>
+      <div class="card clinic-price rv" style="background:var(--ground)">
+        <b style="font-size:17px">의원 · 모니터링·후속 관리 도구</b>
+        <div class="p">14.9<small>만원/월</small></div>
+        <span style="font-size:14px;color:var(--muted)">12개월 기준 연 178.8만원 · 소개비가 아닌 도구 이용료</span>
+        <ul>
+          <li>확인 필요 환자 자동 정렬</li>
+          <li>AI 통화 요약·원문</li>
+          <li>내원 요청·예약 연동</li>
+          <li>진료실 QR·문자로 환자 초대</li>
+        </ul>
+      </div>
+    </div>
+    <p class="fine rv">가격과 이용 기간은 파일럿에서 실제 결제·유지 데이터로 검증할 가정이에요.</p>
+  </div>
+</section>
+
+<section id="evidence">
+  <div class="wrap">
+    <p class="eyebrow rv">근거</p>
+    <h2 class="rv">가이드의 숫자는 논문에서 왔어요</h2>
+    <p class="lead rv">환자 앱의 근육·식욕·수면·체중 기록·요요 가이드는 아래 연구를 바탕으로 만들었어요.</p>
+    <div class="refs">
+      <a class="card ref rv" href="https://doi.org/10.1111/dom.14725" target="_blank" rel="noopener"><b>단약 후 체중 재증가</b><p>Wilding et al. STEP 1 trial extension. Diabetes Obes Metab, 2022</p></a>
+      <a class="card ref rv" href="https://doi.org/10.1001/jama.2023.24945" target="_blank" rel="noopener"><b>투약 지속과 유지</b><p>Aronne et al. SURMOUNT-4. JAMA, 2024</p></a>
+      <a class="card ref rv" href="https://doi.org/10.1056/NEJMoa2032183" target="_blank" rel="noopener"><b>감량 중 근육 손실</b><p>Wilding et al. STEP 1 (DXA substudy). N Engl J Med, 2021</p></a>
+      <a class="card ref rv" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12304835/" target="_blank" rel="noopener"><b>GLP-1 치료 중 영양</b><p>Mozaffarian et al. Joint Advisory (ACLM·ASN·OMA·TOS), 2025</p></a>
+      <a class="card ref rv" href="https://doi.org/10.1001/jamainternmed.2021.8098" target="_blank" rel="noopener"><b>잠과 식욕</b><p>Tasali et al. Sleep extension and energy intake. JAMA Intern Med, 2022</p></a>
+      <a class="card ref rv" href="https://doi.org/10.1056/NEJMoa061883" target="_blank" rel="noopener"><b>매일 체중 재기</b><p>Wing et al. STOP Regain. N Engl J Med, 2006</p></a>
+    </div>
+  </div>
+</section>
+
+<section class="final" style="background:var(--surface);border-top:1px solid var(--div)">
+  <div class="wrap">
+    <h2 class="rv">감량 이후의 유지, 의원과 함께</h2>
+    <p class="lead rv">원장님 화면과 환자 화면이 어떻게 이어지는지, 데모에서 1분이면 볼 수 있어요.</p>
+    <div class="ctas rv">
+      <a class="btn primary" href="../demo/">연동 데모 보기</a>
+      <a class="btn" href="../">환자 앱 체험하기</a>
+      <a class="btn" href="../clinic-dashboard/">원장님 대시보드</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>KeepFit · SNUSV Ideathon 프로토타입 · 화면 속 환자와 수치는 예시예요</span>
+    <a href="https://github.com/danikim9/KeepFit" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</footer>
+
+<script>
+// fade sections in as they scroll into view
+const io = 'IntersectionObserver' in window && new IntersectionObserver((es) => {
+  es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } })
+}, { threshold: 0.12 })
+document.querySelectorAll('.rv').forEach((el) => io ? io.observe(el) : el.classList.add('in'))
+</script>
+</body>
+</html>

@@ -20,6 +20,7 @@ GLP-1(위고비·마운자로) 감량 치료를 마친 환자의 **체중 유지
 
 | | 배포 (Vercel) | 로컬 (`npm run dev`) |
 | --- | --- | --- |
+| 랜딩페이지 | https://keep-fit-lovat.vercel.app/landing/ | http://localhost:5173/landing/ |
 | 연동 시연 (대시보드 + 환자 앱 한 화면) | https://keep-fit-lovat.vercel.app/demo/ | http://localhost:5173/demo/ |
 | 환자 앱 | https://keep-fit-lovat.vercel.app/ | http://localhost:5173/ |
 | 병원 대시보드 | https://keep-fit-lovat.vercel.app/clinic-dashboard/ | http://localhost:5173/clinic-dashboard/ |

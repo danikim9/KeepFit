@@ -6,7 +6,8 @@
   "redirects": [
     { "source": "/clinic", "destination": "/clinic-dashboard/", "permanent": false },
     { "source": "/clinic-dashboard", "destination": "/clinic-dashboard/", "permanent": false },
-    { "source": "/demo", "destination": "/demo/", "permanent": false }
+    { "source": "/demo", "destination": "/demo/", "permanent": false },
+    { "source": "/landing", "destination": "/landing/", "permanent": false }
   ],
   "headers": [
     {
