@@ -9,7 +9,7 @@ GLP-1(위고비·마운자로) 감량 치료를 마친 환자의 **체중 유지
 
 | 자료 | 위치 | 설명 |
 | --- | --- | --- |
-| 환자 앱 (PWA) | 레포 루트 (`src/`) | 초대 → 프로그램 → 전화 설정 → 홈·통화·리포트·가이드·내원 요청. 실행 방법은 아래 |
+| 환자 앱 (PWA) | [`app/`](app/index.html) + `src/` (주소 `/app/`) | 초대 → 프로그램 → 전화 설정 → 홈·통화·리포트·가이드·내원 요청. 실행 방법은 아래 |
 | 병원 대시보드 | [`clinic-dashboard/`](clinic-dashboard/) | 원장님용 화면. `index.html`을 바로 열어도 동작하고, `npm run dev` 후 `/clinic-dashboard/`에서 열면 환자 앱과 실시간 연동 ([설명](clinic-dashboard/README.md)) |
 | 시장조사 (TAM·SAM·SOM) | [`docs/market-analysis.html`](docs/market-analysis.html) · [온라인 보기](https://claude.ai/artifact/TH1AWKzgCjCfzzEd3qSQRF) | 시장 현황, 핵심 문제, 경쟁, 수익 모델, 시장 규모, 검증 과제 |
 | 가이드 콘텐츠 근거 논문 | [`src/data/guides.ts`](src/data/guides.ts) | 근육·식욕·수면·체중 기록·요요 가이드의 수치와 논문 링크 |
@@ -20,9 +20,9 @@ GLP-1(위고비·마운자로) 감량 치료를 마친 환자의 **체중 유지
 
 | | 배포 (Vercel) | 로컬 (`npm run dev`) |
 | --- | --- | --- |
-| 랜딩페이지 (환자 지불 의사 테스트) | https://keep-fit-lovat.vercel.app/landing/ | http://localhost:5173/landing/ |
+| 랜딩페이지 (환자 지불 의사 테스트) | https://keep-fit-lovat.vercel.app/ | http://localhost:5173/ |
 | 연동 시연 (대시보드 + 환자 앱 한 화면) | https://keep-fit-lovat.vercel.app/demo/ | http://localhost:5173/demo/ |
-| 환자 앱 | https://keep-fit-lovat.vercel.app/ | http://localhost:5173/ |
+| 환자 앱 | https://keep-fit-lovat.vercel.app/app/ | http://localhost:5173/app/ |
 | 병원 대시보드 | https://keep-fit-lovat.vercel.app/clinic-dashboard/ | http://localhost:5173/clinic-dashboard/ |
 
 연동은 같은 브라우저 안에서만 돼요(서버 없이 `localStorage` 사용). 연동 시연 페이지 위쪽의 **홈에서 시작** / **처음부터 (온보딩)** 으로 데모를 초기화하고, 가운데 화살표가 방금 어느 쪽으로 무엇이 넘어갔는지 보여줘요.
@@ -38,7 +38,7 @@ npm run dev
 
 `npm run build` 결과물(`dist/`)은 정적 호스팅(GitHub Pages 등) 어디에나 올릴 수 있어요. 해시 라우팅을 써서 별도 설정이 필요 없습니다.
 
-## 화면
+## 환자 앱 화면 (`/app/` 아래)
 
 | 경로 | 화면 |
 | --- | --- |
@@ -71,7 +71,7 @@ npm run dev
 
 ## 랜딩페이지 — 지불 의사 테스트
 
-[`landing/`](landing/index.html)은 환자(B2C)만 대상으로 한 페이지예요. 의원 관련 내용은 없어요. "2주 무료로 시작하기"를 누르면 결제 대신 짧은 설문이 떠요.
+루트 [`index.html`](index.html)은 환자(B2C)만 대상으로 한 페이지예요. 의원 관련 내용은 없어요. "2주 무료로 시작하기"를 누르면 결제 대신 짧은 설문이 떠요.
 
 1. 월 9,900원이면 쓰시겠어요? → 네 / 가격이 부담돼요(얼마면? 무료·3천·5천·7천원) / 필요 없어요(이유)
 2. GLP-1 치료 상태 (투약 중·줄이는 중·끊었어요·시작 예정·해당 없음)
@@ -82,6 +82,13 @@ npm run dev
 - 가격 바꿔 테스트: `?price=12900`처럼 붙이면 그 가격으로 보여주고 응답에 함께 저장돼요.
 - 유입 경로 구분: `?utm_source=instagram&utm_campaign=ad1`
 - `localhost`에서 열면 수집하지 않아요 (`?track=1`을 붙이면 수집).
+
+**구글 스프레드시트로 보기**: [KeepFit 지불 의사 테스트 결과](https://docs.google.com/spreadsheets/d/1bHTx9IAA6XEv-6ISGTjLCkBiohvFwChb4EitIBh97JY/edit) (소유자만 접근)
+
+- `응답`·`방문` 탭은 `=IMPORTDATA("https://keep-fit-lovat.vercel.app/api/sheet?t=wtp|events&token=…")`로 데이터를 불러와요. 구글이 약 1시간마다 다시 불러와요.
+- `요약` 탭: 퍼널(방문 → 시작하기 클릭 → 설문 제출, 같은 사람은 한 번만), 지불 의사 비율, 적정 가격 평균, 가격별·GLP-1 상태별·유입별 표.
+- [`api/sheet.js`](api/sheet.js)는 Supabase 함수 `keepfit_export`를 불러 CSV로 바꿔요. 토큰은 Supabase `private.keepfit_export_token`에만 있고 레포에는 없어요. 시트 링크가 새면 토큰을 바꾸고(`update private.keepfit_export_token set token = ...`) 시트 두 탭의 주소도 바꿔 주세요.
+- 연락처가 들어 있으니 시트를 공유할 때 주의하세요.
 
 ```sql
 -- 가격별 퍼널: 방문 → 시작하기 클릭 → 설문 제출

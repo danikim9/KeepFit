@@ -79,7 +79,7 @@ header .sub{font-size:12px;color:var(--muted)}
   <button class="btn" id="startHome" title="온보딩을 건너뛰고 환자 앱 홈에서 시작">홈에서 시작</button>
   <button class="btn" id="startOnboarding" title="환자 앱을 초대 화면부터 다시 시작">처음부터 (온보딩)</button>
   <a class="btn" href="../clinic-dashboard/" target="_blank" rel="noopener">대시보드만 열기</a>
-  <a class="btn" href="../" target="_blank" rel="noopener">환자 앱만 열기</a>
+  <a class="btn" href="../app/" target="_blank" rel="noopener">환자 앱만 열기</a>
 </header>
 
 <div class="stage">
@@ -99,7 +99,7 @@ header .sub{font-size:12px;color:var(--muted)}
   <section class="pane patient" id="patientPane">
     <div class="label"><b>환자 앱</b> · 이지은</div>
     <div class="viewport" id="patientVp">
-      <div class="phone" id="phone"><div class="screen"><iframe id="patient" src="../#/" title="환자 앱"></iframe></div></div>
+      <div class="phone" id="phone"><div class="screen"><iframe id="patient" src="../app/#/" title="환자 앱"></iframe></div></div>
     </div>
   </section>
 </div>
@@ -176,7 +176,7 @@ function restart(onboarded) {
   } catch { /* storage blocked: iframes just reload */ }
   prev = {}; quietUntil = Date.now() + 2000
   $('event').className = 'event'; $('event').querySelector('.arrow').textContent = '⇄'; $('eventText').textContent = '실시간 연동'
-  $('patient').src = '../?t=' + Date.now() + '#/' + (onboarded ? 'home' : 'invite')
+  $('patient').src = '../app/?t=' + Date.now() + '#/' + (onboarded ? 'home' : 'invite')
   // let the patient app write its fresh snapshot before the dashboard reads it
   setTimeout(() => { $('clinic').src = '../clinic-dashboard/?t=' + Date.now(); prev = read() }, 600)
 }

@@ -23,7 +23,7 @@
 
 레포 루트에서 `npm run dev`를 켜고 두 화면을 같은 주소에서 열면, 탭 사이로 데이터가 실시간으로 오가요. (서버 없이 같은 출처의 `localStorage`와 `storage` 이벤트 사용, 키: `keepfit-link`)
 
-- 환자 앱: http://localhost:5173/
+- 환자 앱: http://localhost:5173/app/
 - 병원 대시보드: http://localhost:5173/clinic-dashboard/ (사이드바에 "환자 앱 연결됨" 표시)
 
 | 환자 앱에서 | 대시보드에서 |
