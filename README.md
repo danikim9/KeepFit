@@ -20,7 +20,7 @@ GLP-1(위고비·마운자로) 감량 치료를 마친 환자의 **체중 유지
 
 | | 배포 (Vercel) | 로컬 (`npm run dev`) |
 | --- | --- | --- |
-| 랜딩페이지 | https://keep-fit-lovat.vercel.app/landing/ | http://localhost:5173/landing/ |
+| 랜딩페이지 (환자 지불 의사 테스트) | https://keep-fit-lovat.vercel.app/landing/ | http://localhost:5173/landing/ |
 | 연동 시연 (대시보드 + 환자 앱 한 화면) | https://keep-fit-lovat.vercel.app/demo/ | http://localhost:5173/demo/ |
 | 환자 앱 | https://keep-fit-lovat.vercel.app/ | http://localhost:5173/ |
 | 병원 대시보드 | https://keep-fit-lovat.vercel.app/clinic-dashboard/ | http://localhost:5173/clinic-dashboard/ |
@@ -68,6 +68,33 @@ npm run dev
 **의원 → KeepFit**: 원장님 대시보드(환자 모니터링·후속 관리 도구) 월 1만 9,000원 (12개월 → 1곳당 연 22만 8,000원)
 
 가격과 이용 기간은 실제 결제·유지 데이터로 검증할 가정이에요. 시장 규모와 근거는 [시장 분석](docs/market-analysis.html)을 보세요.
+
+## 랜딩페이지 — 지불 의사 테스트
+
+[`landing/`](landing/index.html)은 환자(B2C)만 대상으로 한 페이지예요. 의원 관련 내용은 없어요. "2주 무료로 시작하기"를 누르면 결제 대신 짧은 설문이 떠요.
+
+1. 월 9,900원이면 쓰시겠어요? → 네 / 가격이 부담돼요(얼마면? 무료·3천·5천·7천원) / 필요 없어요(이유)
+2. GLP-1 치료 상태 (투약 중·줄이는 중·끊었어요·시작 예정·해당 없음)
+3. 출시 알림 연락처 (선택, 수집·이용 동의 필수)
+
+응답은 Supabase 프로젝트 `danikim9's Project`의 `keepfit_events`(방문·버튼 클릭·설문 열기·제출)와 `keepfit_wtp`(설문 답)에 쌓여요. 페이지의 공개 키로는 **쓰기만** 되고 읽을 수 없어요. 결과는 Supabase 대시보드 → SQL Editor에서 보세요.
+
+- 가격 바꿔 테스트: `?price=12900`처럼 붙이면 그 가격으로 보여주고 응답에 함께 저장돼요.
+- 유입 경로 구분: `?utm_source=instagram&utm_campaign=ad1`
+- `localhost`에서 열면 수집하지 않아요 (`?track=1`을 붙이면 수집).
+
+```sql
+-- 가격별 퍼널: 방문 → 시작하기 클릭 → 설문 제출
+select price_krw,
+  count(distinct session_id) filter (where event = 'view')          as visitors,
+  count(distinct session_id) filter (where event = 'cta_click')     as clicked,
+  count(distinct session_id) filter (where event = 'survey_submit') as answered
+from keepfit_events group by price_krw order by price_krw;
+
+-- 가격별 지불 의사
+select price_krw, answer, count(*), round(avg(fair_price_krw)) as avg_fair_price
+from keepfit_wtp group by price_krw, answer order by price_krw, answer;
+```
 
 ## 데모 시나리오
 
