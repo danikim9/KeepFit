@@ -1,0 +1,11 @@
+{
+  "name": "KeepFit 체중 유지 프로그램",
+  "short_name": "KeepFit",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F4F4F2",
+  "theme_color": "#F4F4F2",
+  "lang": "ko",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
