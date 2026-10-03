@@ -88,6 +88,7 @@ h1, p { margin: 0; }
   padding: 16px 18px; display: flex; flex-direction: column; gap: 10px;
 }
 .card--dashed { background: transparent; border-style: dashed; border-color: var(--dash); }
+.card--new { border: 1.5px solid var(--accent); }
 .card--accent { background: var(--accent-soft); border-color: transparent; }
 .card--warn { background: var(--warn-soft); border-color: var(--warn-line); }
 .card--dark { background: var(--text); color: #fff; border-color: transparent; flex-direction: row; align-items: center; gap: 14px; }
@@ -152,6 +153,7 @@ h1, p { margin: 0; }
 .btn--secondary:hover { background: #f9f9f7; }
 .btn--small { height: 40px; width: auto; padding: 0 14px; border-radius: 10px; font-size: 13px; background: #fff; color: var(--text); }
 .btn--small:hover { background: #ececea; }
+.btn--outline { border: 1px solid var(--line); }
 .btn--danger { background: #c4322b; }
 .btn--danger:hover { background: #a3271f; }
 .link-btn {

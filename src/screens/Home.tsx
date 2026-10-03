@@ -3,7 +3,7 @@ import { Icon } from '../components/Icon'
 import { Screen } from '../components/Layout'
 import { missions, patient, program, scenarios, stages } from '../data/mock'
 import { useAppState } from '../state/AppState'
-import { useLink, writeLink } from '../state/link'
+import { timeAgo, useLink, writeLink } from '../state/link'
 
 export default function Home() {
   const { scenario, callTime, missionsDone, bookedSlot, update, reset } = useAppState()
@@ -14,6 +14,42 @@ export default function Home() {
   const isRisk = scenario === 'risk'
   const showAlert = isRisk || !!request
   const memo = link.memos?.[link.memos.length - 1]
+  const memoIsNew = !!memo && memo.at > (link.memoSeenAt ?? 0)
+  const memoCard = (
+    <section
+      className={`card${memoIsNew ? ' card--new' : ' card--dashed'}`}
+      style={{ flexDirection: 'row', gap: 12 }}
+    >
+      <div className="avatar" />
+      <div className="stack spacer" style={{ gap: 4 }}>
+        <span className="small">
+          {patient.doctor} 원장님 · {memo ? timeAgo(memo.at) : '2일 전'}
+          {memoIsNew && <b style={{ marginLeft: 6, color: 'var(--accent)' }}>새 메모</b>}
+        </span>
+        {memo ? (
+          memo.lines.map((l) => (
+            <span key={l} style={{ fontSize: 14, lineHeight: 1.5 }}>
+              {l}
+            </span>
+          ))
+        ) : (
+          <span style={{ fontSize: 14, lineHeight: 1.5 }}>
+            체중 잘 유지하고 계세요. 다음 주에 0.25mg으로 한 단계 더 줄여볼게요.
+          </span>
+        )}
+        {memoIsNew && (
+          <button
+            type="button"
+            className="btn btn--small btn--outline"
+            style={{ alignSelf: 'flex-start', marginTop: 4 }}
+            onClick={() => writeLink({ memoSeenAt: Date.now() })}
+          >
+            확인했어요
+          </button>
+        )}
+      </div>
+    </section>
+  )
   const inRange = Math.abs(data.today.weight - patient.targetWeight) <= patient.rangeKg
 
   return (
@@ -25,7 +61,7 @@ export default function Home() {
         </div>
         <Link to={showAlert ? '/alert' : '/summary'} className="icon-btn" aria-label="알림" style={{ color: 'var(--text)' }}>
           <Icon name="bell" />
-          {showAlert && !booked && <span className="dot" />}
+          {((showAlert && !booked) || memoIsNew) && <span className="dot" />}
         </Link>
       </header>
 
@@ -43,6 +79,8 @@ export default function Home() {
           <Icon name="forward" size={18} />
         </Link>
       )}
+
+      {memoIsNew && memoCard}
 
       <section className="card">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -120,25 +158,7 @@ export default function Home() {
         })}
       </section>
 
-      <section className="card card--dashed" style={{ flexDirection: 'row', gap: 12 }}>
-        <div className="avatar" />
-        <div className="stack" style={{ gap: 2 }}>
-          <span className="small">
-            {patient.doctor} 원장님 · {memo ? timeAgo(memo.at) : '2일 전'}
-          </span>
-          {memo ? (
-            memo.lines.map((l) => (
-              <span key={l} style={{ fontSize: 14, lineHeight: 1.5 }}>
-                {l}
-              </span>
-            ))
-          ) : (
-            <span style={{ fontSize: 14, lineHeight: 1.5 }}>
-              체중 잘 유지하고 계세요. 다음 주에 0.25mg으로 한 단계 더 줄여볼게요.
-            </span>
-          )}
-        </div>
-      </section>
+      {!memoIsNew && memoCard}
 
       <div className="demo-bar" aria-label="데모 조작">
         <span>데모</span>
@@ -159,9 +179,3 @@ export default function Home() {
   )
 }
 
-function timeAgo(at: number) {
-  const min = Math.floor((Date.now() - at) / 60000)
-  if (min < 1) return '방금'
-  if (min < 60) return `${min}분 전`
-  return `${Math.floor(min / 60)}시간 전`
-}

@@ -281,6 +281,8 @@ function applyPatient(){
 // Mirror 이지은's visit request / booking from the shared record
 function syncVisit(){
  const L=readLink();
+ S.memoSeenAt=L.memoSeenAt||0;
+ if(L.memos&&L.memos.length)S.memos.jieun=[{tags:['잘하고 있어요','지금 용량 유지'],t:'2일 전'}].concat(L.memos.map(m=>({tags:m.tags,t:'오늘',at:m.at})));
  if(L.visitRequest){S.visit.jieun=true;S.offered.jieun=L.visitRequest.slots;}else{delete S.visit.jieun;delete S.offered.jieun;}
  if(L.booking)S.booked.jieun=L.booking.slot;else delete S.booked.jieun;
 }
@@ -294,6 +296,7 @@ window.addEventListener('storage',e=>{
  if(lp&&lp.callAt&&lp.callAt!==(prev.patient&&prev.patient.callAt))toast(`이지은님 AI 통화가 끝났어요 · ${P('jieun').reason}`);
  else if(L.booking&&(!prev.booking||prev.booking.slot!==L.booking.slot))toast(`이지은님이 ${slot1(L.booking.slot)}로 예약했어요`);
  else if(lp&&prev.patient&&lp.scenario!==prev.patient.scenario)toast(`이지은님 상태가 바뀌었어요 · ${P('jieun').stl}`);
+ else if((L.memoSeenAt||0)>(prev.memoSeenAt||0))toast('이지은님이 메모를 확인했어요');
 });
 
 /* ===== helpers ===== */
@@ -352,7 +355,7 @@ function vPatients(){
    <div class="tiles">${p.t.map(([l,v,u,s,c,g])=>`<div class="tile ${c}"><span class="l">${l}</span><span class="v">${v}<small>${u}</small></span><span class="s">${s}</span>${g==='w'?spark(p.w,p.band):g==='a'?bars(p.a):''}</div>`).join('')}</div>
    <div class="say"><small>${p.call}</small>${p.said}</div>
    ${actions}
-   ${last&&!S.sheet&&!S.vsheet?`<span class="faint small">마지막 메모 · ${last.t} · ${esc(last.tags.join(', '))}</span>`:''}
+   ${last&&!S.sheet&&!S.vsheet?`<span class="faint small">마지막 메모 · ${last.t} · ${esc(last.tags.join(', '))}${p.id==='jieun'&&last.at?(S.memoSeenAt>=last.at?' · <b style="color:var(--accent-dark)">환자가 읽음</b>':' · 아직 안 읽음'):''}</span>`:''}
    ${p.id==='jieun'?`<details class="raw"><summary>통화 원문 보기</summary><div class="bubbles">${TRANSCRIPT.map(([w,t])=>`<div class="bb ${w}">${t}</div>`).join('')}</div></details>`:''}
   </div>
  </div>`;
@@ -439,6 +442,7 @@ function vSettings(){const c=S.cfg;return `
     <div class="slotgrid">${OPEN.map((o,i)=>`<button class="tag" data-cslot="${i}" aria-pressed="${c.slots[i]}">${o.replace('\n','<br>')}</button>`).join('')}</div></div>
    <div class="card"><div class="between"><h2>자주 쓰는 메모 태그</h2><span class="faint small">켠 태그만 메모 보내기에 보여요</span></div>
     <div class="taggrid">${TAGS.map(([t],i)=>`<button class="tag" data-ctag="${i}" aria-pressed="${c.tags[i]}">${t}</button>`).join('')}</div></div>
+   <div class="card"><div class="between"><div><h2>데모 초기화</h2><p class="muted s13" style="margin-top:4px">보낸 내원 요청·예약·메모를 지우고 처음 상태로 돌려요. 환자 앱의 알림·메모도 함께 사라져요.</p></div><button class="btn sm" data-act="demo-reset">초기화</button></div></div>
   </div>
  </div>`;}
 
@@ -481,9 +485,10 @@ document.addEventListener('click',e=>{
   if(p.id!=='jieun'||!patientAlive())bookLater(p.id);}
  else if(a==='sheet'){S.sheet=true;S.vsheet=false;S.draft=[];render();}
  else if(a==='sheet-close'){S.sheet=false;S.draft=[];render();}
- else if(a==='memo'){(S.memos[p.id]=S.memos[p.id]||[]).push({tags:S.draft.slice(),t:'방금'});
-  if(p.id==='jieun'){const L=readLink();writeLink({memos:[...(L.memos||[]),{lines:S.draft.map(t=>SENT[t]),tags:S.draft.slice(),at:Date.now()}]});lastLink=readLink();}S.sheet=false;S.draft=[];render();toast(`${p.name}님 앱 홈에 메모가 떴어요`);}
+ else if(a==='memo'){const at=Date.now();(S.memos[p.id]=S.memos[p.id]||[]).push({tags:S.draft.slice(),t:'방금',at});
+  if(p.id==='jieun'){const L=readLink();writeLink({memos:[...(L.memos||[]),{lines:S.draft.map(t=>SENT[t]),tags:S.draft.slice(),at}]});lastLink=readLink();}S.sheet=false;S.draft=[];render();toast(`${p.name}님 앱 홈에 메모가 떴어요`);}
  else if(a==='stable'){S.showStable=true;render();}
+ else if(a==='demo-reset'){const L=readLink();try{localStorage.setItem(LINK_KEY,JSON.stringify(L.patient?{patient:L.patient}:{}))}catch(e){}lastLink=readLink();S=init();S.tab='settings';applyPatient();syncVisit();render();toast('처음 상태로 돌렸어요');}
  else if(a==='toast')toast(d.msg);
  else if(a==='copy'){const txt='yujicare.kr/c/[병원코드]';try{navigator.clipboard.writeText(txt).then(()=>toast('링크를 복사했어요'),()=>toast(txt));}catch(err){toast(txt);}}
 });

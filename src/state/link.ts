@@ -25,6 +25,7 @@ export type Link = {
   visitRequest?: { slots: string[]; message: string; signals?: string; at: number } | null
   booking?: { slot: string; at: number } | null
   memos?: { lines: string[]; tags: string[]; at: number }[]
+  memoSeenAt?: number // when the patient last tapped 확인했어요 on a memo
 }
 
 export function readLink(): Link {
@@ -100,4 +101,12 @@ export function startHeartbeat() {
   beat()
   const id = setInterval(beat, 2000)
   return () => clearInterval(id)
+}
+
+export function timeAgo(at: number) {
+  const min = Math.round((Date.now() - at) / 60000)
+  if (min < 1) return '방금'
+  if (min < 60) return `${min}분 전`
+  const h = Math.round(min / 60)
+  return h < 24 ? `${h}시간 전` : `${Math.round(h / 24)}일 전`
 }
