@@ -13,7 +13,7 @@ GLP-1(위고비·마운자로) 감량 치료를 마친 환자의 **체중 유지
 | 병원 대시보드 | [`clinic-dashboard/`](clinic-dashboard/) | 원장님용 화면. `index.html`을 바로 열어도 동작하고, `npm run dev` 후 `/clinic-dashboard/`에서 열면 환자 앱과 실시간 연동 ([설명](clinic-dashboard/README.md)) |
 | 시장조사 (TAM·SAM·SOM) | [`docs/market-analysis.html`](docs/market-analysis.html) · [온라인 보기](https://claude.ai/artifact/TH1AWKzgCjCfzzEd3qSQRF) | 시장 현황, 핵심 문제, 경쟁, 수익 모델, 시장 규모, 검증 과제 |
 | 가이드 콘텐츠 근거 논문 | [`src/data/guides.ts`](src/data/guides.ts) | 근육·식욕·수면·체중 기록·요요 가이드의 수치와 논문 링크 |
-| 발표자료 | [`docs/pitch/KeepFit-pitch.pdf`](docs/pitch/KeepFit-pitch.pdf) · [HTML](docs/pitch/KeepFit-pitch.html) | 문제·해결·기능(스크린샷)·시장·비즈니스 모델·수익성, 13장 |
+| 발표자료 | [`docs/pitch/KeepFit-pitch.pdf`](docs/pitch/KeepFit-pitch.pdf) · [HTML](docs/pitch/KeepFit-pitch.html) | 문제·해결·기능(개념 화면)·시장·비즈니스 모델·수익성, 13장 |
 | 와이어프레임 (환자 앱 8화면) | [Claude 디자인 캔버스](https://claude.ai/artifact/RjFiCd5qQcEYxxS5Ja3itT) | 링크가 있으면 누구나 보기 가능 |
 
 **환자 앱과 병원 대시보드는 실시간으로 연동돼요.** `npm run dev` 후 두 탭을 나란히 열어 주세요.
