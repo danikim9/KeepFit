@@ -5,7 +5,17 @@ GLP-1(위고비·마운자로) 감량 치료를 마친 환자의 **체중 유지
 
 병원이 치료 종료 시점에 환자를 초대하고(B2B2C), 환자는 매일 AI 코치 전화만 받으면 체중·식욕·수면이 기록됩니다. 위험 신호가 보이면 원장님이 내원을 요청합니다.
 
-- 와이어프레임: https://claude.ai/artifact/RjFiCd5qQcEYxxS5Ja3itT
+## 자료 한눈에 보기
+
+| 자료 | 위치 | 설명 |
+| --- | --- | --- |
+| 환자 앱 (PWA) | 레포 루트 (`src/`) | 초대 → 프로그램 → 전화 설정 → 홈·통화·리포트·가이드·내원 요청. 실행 방법은 아래 |
+| 병원 대시보드 | [`clinic-dashboard/`](clinic-dashboard/) | 원장님용 목업. `index.html`을 브라우저로 열면 바로 동작 ([설명](clinic-dashboard/README.md)) |
+| 시장 분석 (TAM·SAM·SOM) | [`docs/market-analysis.html`](docs/market-analysis.html) | 근거 자료, 계산 과정, 한계, 출처. 다운로드해서 브라우저로 열기 |
+| 가이드 콘텐츠 근거 논문 | [`src/data/guides.ts`](src/data/guides.ts) | 근육·식욕·수면·체중 기록·요요 가이드의 수치와 논문 링크 |
+| 와이어프레임 (환자 앱 8화면) | [Claude 디자인 캔버스](https://claude.ai/artifact/RjFiCd5qQcEYxxS5Ja3itT) | 링크가 있으면 누구나 보기 가능 |
+
+두 화면은 같은 데모 환자(이지은, `risk` 시나리오: 72.6kg, 식욕 7일 평균 8.2)를 기준으로 맞춰져 있어요. 병원 대시보드에서 내원 요청을 보내는 장면과 환자 앱 08 화면이 이어지는 흐름입니다.
 
 ## 실행
 
