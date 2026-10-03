@@ -9,7 +9,17 @@ export const patient = {
   treatment: { months: 6, lostKg: 12, drug: '위고비' },
   targetWeight: 70, // 데모 값: 병원이 설정한 유지 목표 체중
   rangeKg: 2,
-  packagePrice: '[패키지 가격]',
+}
+
+// 환자가 우리에게 내는 서비스 이용료 (약값·진료비는 병원에 별도 지불)
+export const pricing = {
+  trialDays: 14,
+  tiers: [
+    { period: '1–3개월', phase: '집중기', calls: '매일 통화', monthly: '4.9만원' },
+    { period: '4–6개월', phase: '적응기', calls: '주 2–3회 통화', monthly: '2.9만원' },
+    { period: '7개월~', phase: '혼자서 유지', calls: '주 1회 통화', monthly: '1.9만원' },
+  ],
+  refund: '6개월 목표 범위(±2kg)를 지키면 마지막 달 요금을 돌려드려요',
 }
 
 export const program = {
