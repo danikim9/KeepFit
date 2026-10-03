@@ -14,10 +14,12 @@ export const patient = {
 // 환자가 우리에게 내는 서비스 이용료 (약값·진료비는 병원에 별도 지불)
 export const pricing = {
   trialDays: 14,
+  monthly: '9,900원',
+  // 요금은 같고, 통화 횟수만 단약 단계에 맞춰 줄어요
   tiers: [
-    { period: '1–3개월', phase: '집중기', calls: '매일 통화', monthly: '4.9만원' },
-    { period: '4–6개월', phase: '적응기', calls: '주 2–3회 통화', monthly: '2.9만원' },
-    { period: '7개월~', phase: '혼자서 유지', calls: '주 1회 통화', monthly: '1.9만원' },
+    { period: '1–3개월', phase: '집중기', calls: '매일 통화' },
+    { period: '4–6개월', phase: '적응기', calls: '주 2–3회 통화' },
+    { period: '7개월~', phase: '혼자서 유지', calls: '주 1회 통화' },
   ],
   refund: '6개월 목표 범위(±2kg)를 지키면 마지막 달 요금을 돌려드려요',
 }

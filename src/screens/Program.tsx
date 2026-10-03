@@ -17,7 +17,7 @@ export default function Program() {
 
       <div className="stack">
         <span className="eyebrow eyebrow--accent">{patient.clinic} 연동</span>
-        <h1 className="h1">약이 줄수록, 비용도 줄어요</h1>
+        <h1 className="h1">원장님과 함께, 월 {pricing.monthly}</h1>
         <p className="lead">식욕이 돌아오는 시기를 원장님과 함께 넘겨요.</p>
       </div>
 
@@ -37,15 +37,16 @@ export default function Program() {
           <span>이용료</span>
           <span className="tag">첫 2주 무료</span>
         </div>
+        <div className="stack" style={{ gap: 2 }}>
+          <b style={{ fontSize: 24 }}>월 {pricing.monthly}</b>
+          <span className="small">단계가 바뀌어도 요금은 같아요. 통화 횟수만 줄어요.</span>
+        </div>
         {pricing.tiers.map((t, i) => (
           <div className={`tier${i === 0 ? ' is-current' : ''}`} key={t.period}>
-            <div className="stack" style={{ gap: 0 }}>
-              <b style={{ fontSize: 14 }}>
-                {t.period} · {t.phase}
-              </b>
-              <span className="small">{t.calls}</span>
-            </div>
-            <b style={{ fontSize: 16 }}>월 {t.monthly}</b>
+            <b style={{ fontSize: 14 }}>
+              {t.period} · {t.phase}
+            </b>
+            <span className="small">{t.calls}</span>
           </div>
         ))}
         <div style={{ height: 1, background: 'var(--line-soft)' }} />
