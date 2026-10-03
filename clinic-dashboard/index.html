@@ -284,10 +284,10 @@ function applyPatient(){
       ['식욕 · 7일 평균',String(lp.appetiteAvg),'/10',high?'주의 기준 8 넘음':'기준 8 아래',high?'mid':'','a'],
       ['수면',String(lp.sleep),'시간',lp.sleep<6?'평소보다 짧음':'목표 7시간','','']];
  p.w=lp.weekly.weight;p.a=lp.weekly.appetite;p.band=BAND;
- p.call=lp.callAt?`방금 ${hhmm(lp.callAt)} 통화 · 2분 14초`:'어젯밤 9:02 통화 · 2분 14초';
- p.said=`“${lp.said}”`;p.signals=lp.scenario==='risk'?RISK_SIGNALS:(over||high?`식욕 7일 평균 ${lp.appetiteAvg} · 체중 ${lp.weight}kg`:undefined);
+ p.call=lp.callAt?`방금 ${hhmm(lp.callAt)} 통화 · ${lp.duration||'2분 14초'}`:'어젯밤 9:02 통화 · 2분 14초';
+ p.said=lp.said?`“${lp.said}”`:(lp.duration&&String(lp.duration).startsWith('버튼')?`눌러서 답했어요 · ${lp.note}`:lp.note);p.signals=lp.scenario==='risk'?RISK_SIGNALS:(over||high?`식욕 7일 평균 ${lp.appetiteAvg} · 체중 ${lp.weight}kg`:undefined);
  const c=CALLS.find(x=>x[0]==='jieun');
- c.splice(2,7,lp.callAt?hhmm(lp.callAt):'9:02','2분 14초',lp.weight.toFixed(1),String(lp.appetite),String(lp.sleep),lp.note,p.st==='ok'?'':p.st);
+ c.splice(2,7,lp.callAt?hhmm(lp.callAt):'9:02',lp.duration||'2분 14초',lp.weight.toFixed(1),String(lp.appetite),String(lp.sleep),lp.note,p.st==='ok'?'':p.st);
  TRANSCRIPT.splice(0,TRANSCRIPT.length,...lp.transcript.map(l=>[l.who,l.text]));
 }
 // Mirror 이지은's visit request / booking from the shared record
@@ -352,7 +352,7 @@ function vPatients(){
   const off=offerSummary(p.id);
   const v=S.booked[p.id]?`<div class="status">✓ 내원 예약 확정 · ${slot1(S.booked[p.id])}<span>제안한 시간 중 환자가 골랐어요</span></div>`
    :S.visit[p.id]?`<div class="status">내원 요청 보냄 · 환자 선택 대기<span>제안한 시간 ${off}</span></div>`:'';
-  actions=`${v}<div class="actions">${S.visit[p.id]?'':`<button class="btn ${p.st!=='ok'?'primary':''} wide" data-act="vsheet">내원 요청 보내기</button>`}<button class="btn wide" data-act="sheet">메모 보내기</button></div>`;
+  actions=`${v}<div class="actions">${S.visit[p.id]?'':`<button class="btn ${p.st!=='ok'?'primary':''} wide" data-act="vsheet">내원 요청 보내기</button>`}<button class="btn wide" data-act="sheet">메모 보내기</button></div>${p.id==='jieun'?`<div class="between s13"><span class="faint">다음 AI 코치 전화 · 오늘 저녁 9:00</span><button class="link" data-act="call-now">지금 전화 걸기</button></div>`:''}`;
  }
  const last=(S.memos[p.id]||[]).slice(-1)[0];const nc=needCount();
  return `
@@ -497,6 +497,7 @@ document.addEventListener('click',e=>{
   if(p.id==='jieun'){writeLink({visitRequest:{slots:S.offered[p.id],message:msg,signals:p.signals,at:Date.now()},booking:null});lastLink=readLink();}
   render();toast(`${p.name}님 앱으로 내원 요청과 가능한 시간 ${S.offered[p.id].length}개를 보냈어요`);
   if(p.id!=='jieun'||!patientAlive())bookLater(p.id);}
+ else if(a==='call-now'){if(!patientAlive()){toast('환자 앱이 열려 있지 않아요. 같은 브라우저에서 환자 앱을 먼저 열어 주세요');return;}writeLink({callRequest:{at:Date.now()}});lastLink=readLink();toast('지은님 휴대폰으로 AI 코치 전화를 걸었어요');}
  else if(a==='sheet'){S.sheet=true;S.vsheet=false;S.draft=[];render();}
  else if(a==='sheet-close'){S.sheet=false;S.draft=[];render();}
  else if(a==='memo'){const at=Date.now();(S.memos[p.id]=S.memos[p.id]||[]).push({tags:S.draft.slice(),t:'방금',at});

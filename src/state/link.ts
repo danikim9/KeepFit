@@ -18,6 +18,11 @@ export type PatientSnapshot = {
   note: string
   transcript: Line[]
   callAt: number | null // set when a call finishes
+  // 실제 음성 통화로 기록된 경우 (src/voice)
+  live?: boolean
+  duration?: string // "1분 48초"
+  summary?: { label: string; value: string; warn?: boolean }[]
+  feedback?: string
 }
 
 export type Link = {
@@ -26,6 +31,7 @@ export type Link = {
   booking?: { slot: string; at: number } | null
   memos?: { lines: string[]; tags: string[]; at: number }[]
   memoSeenAt?: number // when the patient last tapped 확인했어요 on a memo
+  callRequest?: { at: number } | null // 대시보드에서 "지금 AI 전화 걸기" → 환자 앱에 전화가 울려요
 }
 
 export function readLink(): Link {

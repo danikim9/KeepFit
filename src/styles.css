@@ -302,3 +302,108 @@ h1, p { margin: 0; }
   display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px;
 }
 .day-chip b { font-size: 15px; }
+
+/* AI 코치 전화: 걸려 오는 화면 · 듣는 중 · 버튼으로 답하기 */
+.call--ring { justify-content: center; gap: 12px; padding-bottom: 48px; }
+.ring__actions { display: flex; gap: 96px; margin-top: 56px; }
+.ring__col { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: #c9c9c4; }
+.ring__btn { width: 72px; height: 72px; border-radius: 36px; border: 0; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.ring__btn--no { background: #c4322b; }
+.ring__btn--no svg { transform: rotate(135deg); }
+.ring__btn--yes { background: #2f9e57; animation: ring-bounce 1.2s ease-in-out infinite; }
+@keyframes ring-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.call__avatar.is-listening { background: #2f9e57; }
+.bubble--interim { opacity: .75; font-style: italic; }
+.call__quick { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; }
+.call__quick button {
+  min-height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid #3a3a3a;
+  background: #1f1f1f; color: #fff; font-size: 14px; cursor: pointer;
+}
+.call__quick button:hover { border-color: #6f8ff0; }
+.call__hint { font-size: 12px; color: #9a9a95; }
+@media (prefers-reduced-motion: reduce) { .ring__btn--yes { animation: none; } }
+
+/* 버튼으로 체크인 */
+.checkin { display: flex; flex-direction: column; gap: 14px; animation: slide-in .18s ease-out; }
+.checkin__grid { display: grid; gap: 8px; }
+.checkin__opt { border-radius: 14px; min-height: 56px; padding: 0 6px; font-size: 15px; }
+@keyframes slide-in { from { opacity: .4; transform: translateX(12px); } }
+
+/* 데모용 휴대폰 바탕화면 (/os) */
+.os {
+  max-width: 430px; min-height: 100dvh; margin: 0 auto; position: relative; color: #fff;
+  background: radial-gradient(120% 80% at 20% 0%, #3d5bb8 0%, #1d2a57 45%, #0d1226 100%);
+  display: flex; flex-direction: column; padding: 0 18px 24px; overflow: hidden;
+}
+.os__status { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; padding: 12px 8px 0; }
+.os__clock { text-align: center; margin: 56px 0 40px; display: flex; flex-direction: column; gap: 2px; }
+.os__clock b { font-size: 64px; font-weight: 600; letter-spacing: -.02em; line-height: 1.05; }
+.os__clock span { font-size: 15px; opacity: .85; }
+.os__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 10px; padding: 0 6px; }
+.os__app { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: #fff; background: none; border: 0; padding: 0; cursor: default; }
+button.os__app { cursor: pointer; }
+.os__app-icon {
+  width: 56px; height: 56px; border-radius: 15px; background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; opacity: .95;
+}
+.os__app-icon--sm { width: 36px; height: 36px; border-radius: 10px; font-size: 15px; flex-shrink: 0; }
+.os__foot { margin-top: auto; text-align: center; font-size: 12px; opacity: .8; padding-top: 24px; }
+.os__replay { border: 1px solid rgba(255,255,255,.4); background: rgba(255,255,255,.08); color: #fff; border-radius: 16px; padding: 8px 14px; font-size: 12px; cursor: pointer; }
+.os__note {
+  position: absolute; left: 10px; right: 10px; top: 40px; z-index: 5;
+  background: rgba(245, 245, 247, .97); color: #1a1a1a; border-radius: 22px; padding: 12px;
+  box-shadow: 0 12px 36px rgba(0,0,0,.35); display: flex; flex-direction: column; gap: 10px;
+  animation: note-drop .4s cubic-bezier(.2,.9,.3,1.2);
+}
+@keyframes note-drop { from { transform: translateY(-120%); opacity: 0; } }
+.os__note-body { display: flex; gap: 10px; text-align: left; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
+.os__note-text { display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 1.45; min-width: 0; }
+.os__note-head { display: flex; justify-content: space-between; font-size: 12px; color: #5c5c58; }
+.os__note-head b { font-weight: 600; }
+.os__note-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.os__btn {
+  min-height: 42px; border-radius: 12px; border: 0; background: #e3e3e8; color: #1a1a1a; font-size: 14px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+}
+.os__btn--call { background: #2f9e57; color: #fff; }
+@media (prefers-reduced-motion: reduce) { .os__note, .checkin { animation: none; } }
+
+/* 통화 중 답하기 패널 (질문마다 입력 방식이 달라요) */
+.call__mode { border: 1px solid #3a3a3a; background: #1f1f1f; color: #e6e6e2; border-radius: 16px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+.ring__silent { margin-top: 28px; border: 0; background: none; color: #c9c9c4; font-size: 13px; text-decoration: underline; cursor: pointer; min-height: 44px; }
+.ap { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.ap button { font: inherit; cursor: pointer; }
+.ap__chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.ap__chips button { min-height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid #3a3a3a; background: #1f1f1f; color: #fff; font-size: 14px; }
+.ap__chips button[aria-pressed='true'] { background: #2a3d73; border-color: #6f8ff0; }
+.ap__chips button.is-ghost { border-style: dashed; color: #c9c9c4; }
+.ap__num { display: flex; gap: 8px; align-items: stretch; }
+.ap__step { width: 44px; border-radius: 12px; border: 1px solid #3a3a3a; background: #1f1f1f; color: #fff; font-size: 20px; }
+.ap__field { flex: 1; display: flex; align-items: center; gap: 6px; background: #1f1f1f; border: 1px solid #3a3a3a; border-radius: 12px; padding: 0 12px; min-width: 0; }
+.ap__field input { flex: 1; min-width: 0; height: 46px; border: 0; background: none; color: #fff; font-size: 20px; font-weight: 600; outline: none; }
+.ap__field span { color: #9a9a95; font-size: 14px; }
+.ap__field:focus-within { border-color: #6f8ff0; }
+.ap__send { border: 0; border-radius: 12px; background: #2f5bd3; color: #fff; padding: 0 16px; font-size: 14px; font-weight: 600; min-height: 46px; }
+.ap__send:disabled { opacity: .35; cursor: default; }
+.ap__send--wide { width: 100%; }
+.ap__scale { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px; }
+.ap__scale button { height: 44px; border-radius: 10px; border: 1px solid #3a3a3a; background: #1f1f1f; color: #fff; font-size: 15px; font-weight: 600; padding: 0; }
+.ap__scale button.is-high { border-color: #8a4a1f; }
+.ap__scale button:hover { background: #2a3d73; }
+.ap__legend { display: flex; justify-content: space-between; font-size: 11px; color: #9a9a95; }
+.ap--two { flex-direction: row; }
+.ap__big { flex: 1; height: 56px; border-radius: 14px; border: 1px solid #3a3a3a; background: #1f1f1f; color: #fff; font-size: 16px; font-weight: 600; }
+.ap__big:hover { background: #2a3d73; }
+
+/* 통화 화면은 한 화면 안에: 대화는 가운데서 스크롤, 답하기 패널과 종료 버튼은 항상 보이게 */
+.screen--dark { height: 100dvh; min-height: 0; overflow: hidden; }
+.screen--dark .screen__body { min-height: 0; padding-bottom: 16px; }
+.call { min-height: 0; }
+.call__log { flex: 1 1 auto; min-height: 60px; max-height: none; }
+.call.has-panel { padding-top: 8px; gap: 6px; }
+.call.has-panel .call__avatar { width: 56px; height: 56px; margin-bottom: 0; }
+.call.has-panel .call__avatar svg { width: 26px; height: 26px; }
+.call.has-panel > b { font-size: 17px !important; }
+.call.has-panel .call__end { width: 52px; height: 52px; margin-top: 4px; }
+.call .ap { flex-shrink: 0; }
+.call__avatar, .call__end, .call > b, .call__meta, .call__mode { flex-shrink: 0; }

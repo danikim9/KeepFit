@@ -55,7 +55,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   // Keep the clinic dashboard's view of this patient current
   useEffect(() => {
-    writeLink({ patient: { ...snapshot(state.scenario), callAt: readLink().patient?.callAt ?? null } })
+    const prev = readLink().patient
+    // 방금 음성 통화로 기록된 값은 데모 데이터로 덮어쓰지 않아요
+    if (prev?.live && prev.scenario === state.scenario) return
+    writeLink({ patient: { ...snapshot(state.scenario), callAt: prev?.callAt ?? null } })
   }, [state.scenario])
 
   useEffect(() => startHeartbeat(), [])

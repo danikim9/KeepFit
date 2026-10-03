@@ -4,14 +4,24 @@ import { Icon } from '../components/Icon'
 import { Screen, TopBar } from '../components/Layout'
 import { scenarios } from '../data/mock'
 import { useAppState } from '../state/AppState'
+import { useLink } from '../state/link'
 
 export default function CallSummary() {
   const { scenario } = useAppState()
   const data = scenarios[scenario]
+  // 방금 음성 통화로 기록된 값이 있으면 그걸 보여줘요
+  const live = useLink().patient
+  const isLive = !!live?.live && !!live.summary
+  const rows = isLive ? live!.summary! : data.summary
+  const lines = isLive ? live!.transcript : data.transcript
+  const tip = isLive ? live!.feedback! : data.feedback
+  const when = isLive && live!.callAt
+    ? `오늘 ${new Date(live!.callAt).getHours()}:${String(new Date(live!.callAt).getMinutes()).padStart(2, '0')} · ${live!.duration}`
+    : '10월 3일 저녁 9:02 · 2분 14초'
   const [playing, setPlaying] = useState(false)
   // Show the two lines around the appetite question as the excerpt
-  const qIndex = data.transcript.findIndex((l) => l.text.includes('식욕'))
-  const excerpt = data.transcript.slice(qIndex, qIndex + 2)
+  const qIndex = Math.max(0, lines.findIndex((l) => l.text.includes('식욕')))
+  const excerpt = lines.slice(qIndex, qIndex + 2)
 
   return (
     <Screen>
@@ -28,13 +38,13 @@ export default function CallSummary() {
           <Icon name={playing ? 'pause' : 'play'} size={18} stroke={playing ? 2.5 : 1.8} />
         </button>
         <div className="stack spacer">
-          <span className="eyebrow">10월 3일 저녁 9:02 · 2분 14초</span>
+          <span className="eyebrow">{when}</span>
           <div style={{ height: 24, borderRadius: 4, background: 'repeating-linear-gradient(90deg, var(--muted-fill) 0 3px, transparent 3px 6px)' }} />
         </div>
       </section>
 
       <section className="card list" style={{ padding: '6px 16px' }}>
-        {data.summary.map((r) => (
+        {rows.map((r) => (
           <div className="list__row" key={r.label}>
             <span>{r.label}</span>
             <b className={r.warn ? 'text-warn' : undefined}>{r.value}</b>
@@ -53,7 +63,7 @@ export default function CallSummary() {
 
       <section className="card card--accent" style={{ gap: 4 }}>
         <b style={{ fontSize: 14, color: 'var(--accent-strong)' }}>AI 코치 피드백</b>
-        <span style={{ fontSize: 14, lineHeight: 1.55 }}>{data.feedback}</span>
+        <span style={{ fontSize: 14, lineHeight: 1.55 }}>{tip}</span>
       </section>
 
       <div className="footer" style={{ alignItems: 'center' }}>

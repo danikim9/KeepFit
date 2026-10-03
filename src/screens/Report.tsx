@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Screen } from '../components/Layout'
 import { patient, scenarios } from '../data/mock'
 import { useAppState } from '../state/AppState'
+import { useLink } from '../state/link'
 
 const APPETITE_ALERT = 8
 
@@ -55,7 +56,9 @@ export default function Report() {
   const { scenario } = useAppState()
   const data = scenarios[scenario]
   const [range, setRange] = useState<'weekly' | 'monthly'>('weekly')
-  const series = data[range]
+  // 주간 그래프 마지막 날은 방금 체크인한 값으로
+  const live = useLink().patient
+  const series = range === 'weekly' && live?.live ? live.weekly : data[range]
   const labels = range === 'weekly' ? ['월', '화', '수', '목', '금', '토', '일'] : ['1주', '2주', '3주', '4주']
   const delta = series.weight[series.weight.length - 1] - series.weight[0]
   const appetiteMax = Math.max(...series.appetite)

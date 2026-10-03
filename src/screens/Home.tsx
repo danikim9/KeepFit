@@ -9,6 +9,10 @@ export default function Home() {
   const { scenario, callTime, missionsDone, bookedSlot, update, reset } = useAppState()
   const link = useLink()
   const data = scenarios[scenario]
+  // 방금 AI 코치 체크인(통화·버튼)으로 기록된 값이 있으면 그걸 보여줘요
+  const lp = link.patient?.live ? link.patient : null
+  const today = lp ? { weight: lp.weight, appetite: lp.appetite, sleep: lp.sleep } : data.today
+  const appetiteNote = lp ? (lp.appetite >= 8 ? '주의 기준 초과' : `7일 평균 ${lp.appetiteAvg}`) : data.appetiteNote
   const request = link.visitRequest
   const booked = link.booking?.slot ?? bookedSlot
   const isRisk = scenario === 'risk'
@@ -50,7 +54,7 @@ export default function Home() {
       </div>
     </section>
   )
-  const inRange = Math.abs(data.today.weight - patient.targetWeight) <= patient.rangeKg
+  const inRange = Math.abs(today.weight - patient.targetWeight) <= patient.rangeKg
 
   return (
     <Screen tabs>
@@ -109,16 +113,20 @@ export default function Home() {
           지금 받기
         </Link>
       </section>
+      <Link to="/checkin" className="link-row" style={{ minHeight: 44, marginTop: -8 }}>
+        <span>통화가 어려우면 소리 없이 눌러서 답하기 · 20초</span>
+        <Icon name="forward" size={16} />
+      </Link>
 
       <div className="section-title" style={{ marginTop: 4 }}>
-        <span>최근 통화로 기록된 내 상태</span>
+        <span>{lp ? '방금 체크인으로 기록된 내 상태' : '최근 통화로 기록된 내 상태'}</span>
         <Link to="/summary">요약 보기</Link>
       </div>
       <div className="tiles">
         <div className="tile">
           <span className="tile__label">체중</span>
           <span className="tile__value">
-            {data.today.weight}
+            {today.weight}
             <small>kg</small>
           </span>
           <span className={`small${inRange ? '' : ' text-warn'}`}>{inRange ? '유지 범위 안' : '유지 범위 초과'}</span>
@@ -126,15 +134,15 @@ export default function Home() {
         <div className="tile">
           <span className="tile__label">식욕</span>
           <span className="tile__value">
-            {data.today.appetite}
+            {today.appetite}
             <small>/10</small>
           </span>
-          <span className="small text-warn">{data.appetiteNote}</span>
+          <span className="small text-warn">{appetiteNote}</span>
         </div>
         <div className="tile">
           <span className="tile__label">수면</span>
           <span className="tile__value">
-            {data.today.sleep}
+            {today.sleep}
             <small>시간</small>
           </span>
           <span className="small">목표 7시간</span>
