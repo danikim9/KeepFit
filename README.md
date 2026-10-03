@@ -28,6 +28,7 @@ npm run dev
 | `#/summary` | 05 통화 요약 |
 | `#/report` | 06 주간/월간 리포트 |
 | `#/guide` | 07 단약 로드맵·가이드 |
+| `#/guide/:id` | 가이드 상세 (muscle, appetite, sleep, weigh, rebound) — 논문 근거·체크리스트 |
 | `#/alert` | 08 원장님 내원 요청·예약 |
 
 ## 요금 (서비스 이용료만, 약값·진료비는 병원에 별도 지불)
@@ -59,6 +60,7 @@ npm run dev
 
 ## 구조
 
+- `src/data/guides.ts` — 가이드 콘텐츠와 근거 논문 (STEP 1, SURMOUNT-4, Jensen 2024, Spiegel 2004, Tasali 2022, Wing 2006, Shukla 2015, 2025 GLP-1 영양 공동 권고)
 - `src/data/mock.ts` — 데모 데이터 (실서비스에서는 병원 치료 기록 + 보이스 에이전트 수집 데이터로 대체)
 - `src/state/AppState.tsx` — 설정·미션·시나리오 상태 (localStorage 저장)
 - `src/screens/` — 화면별 컴포넌트

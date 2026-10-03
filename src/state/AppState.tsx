@@ -9,9 +9,11 @@ type State = {
   missionsDone: Record<string, boolean>
   scenario: Scenario
   bookedSlot: string | null
+  guideChecks: Record<string, boolean> // key: `${guideId}:${actionIndex}`
 }
 
 const initial: State = {
+  guideChecks: {},
   onboarded: false,
   frequency: '매일',
   callTime: '저녁 9:00',

@@ -9,6 +9,7 @@ import CallSummary from './screens/CallSummary'
 import Report from './screens/Report'
 import Guide from './screens/Guide'
 import Alert from './screens/Alert'
+import GuideDetail from './screens/GuideDetail'
 
 function Start() {
   const { onboarded } = useAppState()
@@ -30,6 +31,7 @@ export default function App() {
           <Route path="/summary" element={<CallSummary />} />
           <Route path="/report" element={<Report />} />
           <Route path="/guide" element={<Guide />} />
+          <Route path="/guide/:id" element={<GuideDetail />} />
           <Route path="/alert" element={<Alert />} />
           <Route path="*" element={<Start />} />
         </Routes>

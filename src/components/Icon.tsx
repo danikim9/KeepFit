@@ -10,6 +10,12 @@ const paths = {
   check: <path d="M20 6 9 17l-5-5" />,
   play: <path d="M7 4v16l13-8z" fill="currentColor" />,
   pause: <path d="M8 5v14M16 5v14" />,
+  dumbbell: <><path d="M6 7v10M18 7v10M3 9.5v5M21 9.5v5M6 12h12" /></>,
+  utensils: <><path d="M7 3v8a2 2 0 0 0 2 2v8M11 3v8a2 2 0 0 1-2 2M7 3v5M11 3v5" /><path d="M17 21V3c-2 1-3 4-3 7s1 4 3 4" /></>,
+  moon: <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />,
+  scale: <><rect x="3" y="3" width="18" height="18" rx="4" /><path d="M8.5 9a5 5 0 0 1 7 0L13 11.5" /></>,
+  book: <><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z" /><path d="M4 21V5M8 7h7" /></>,
+  external: <><path d="M14 4h6v6M20 4l-9 9" /><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5" /></>,
 }
 
 export type IconName = keyof typeof paths

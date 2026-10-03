@@ -1,8 +1,13 @@
+import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Screen } from '../components/Layout'
+import { guides, reboundArticle } from '../data/guides'
 import { program, stages } from '../data/mock'
 
 export default function Guide() {
+  const focus = guides.filter((g) => g.focus)
+  const more = guides.filter((g) => !g.focus)
+
   return (
     <Screen tabs>
       <header className="row" style={{ minHeight: 44 }}>
@@ -43,22 +48,40 @@ export default function Guide() {
       </div>
 
       <div className="guide-grid">
-        <article className="card" style={{ padding: 14, gap: 8 }}>
-          <div className="img-ph">이미지</div>
-          <b style={{ fontSize: 14 }}>근육 지키기</b>
-          <span className="small" style={{ lineHeight: 1.5 }}>맨몸 근력 운동 주 3회 · 영상 5편</span>
-        </article>
-        <article className="card" style={{ padding: 14, gap: 8 }}>
-          <div className="img-ph">이미지</div>
-          <b style={{ fontSize: 14 }}>식욕 다루기</b>
-          <span className="small" style={{ lineHeight: 1.5 }}>단백질 먼저 먹는 식사 순서 · 편의점 조합</span>
-        </article>
+        {focus.map((g) => (
+          <Link to={`/guide/${g.id}`} className="card guide-card" key={g.id}>
+            <span className="badge-icon">
+              <Icon name={g.icon} size={18} />
+            </span>
+            <b style={{ fontSize: 15 }}>{g.title}</b>
+            <span className="small" style={{ lineHeight: 1.45 }}>{g.cardStat}</span>
+            <span className="guide-card__more">
+              자세히 <Icon name="forward" size={14} />
+            </span>
+          </Link>
+        ))}
       </div>
 
-      <a href="#/guide" className="link-row">
-        <span>단약 후 요요는 왜 올까? (3분 읽기)</span>
-        <Icon name="forward" size={18} />
-      </a>
+      <b style={{ fontSize: 15, marginTop: 4 }}>더 알아보기</b>
+      <div className="stack" style={{ gap: 8 }}>
+        {[...more, reboundArticle].map((g) => (
+          <Link to={`/guide/${g.id}`} className="link-row" key={g.id}>
+            <span className="row" style={{ gap: 10 }}>
+              <span className="badge-icon badge-icon--sm">
+                <Icon name={g.icon} size={15} />
+              </span>
+              <span className="stack" style={{ gap: 0 }}>
+                <span>{g.title}</span>
+                {g.cardStat && <span className="small">{g.cardStat}</span>}
+              </span>
+            </span>
+            <span className="row" style={{ gap: 4, flexShrink: 0 }}>
+              <span className="small">{g.readMin}분</span>
+              <Icon name="forward" size={18} />
+            </span>
+          </Link>
+        ))}
+      </div>
     </Screen>
   )
 }
