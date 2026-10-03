@@ -7,107 +7,140 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* Layout: one reading column; a concentric-market figure up top, then evidence → math → limits → sources */
+/* Layout: one wide column (max 1080px) so rows stay on one line; key-number strip, then numbered research sections as row lists and cards */
 :root {
   --bg: #F5F5F2;
   --surface: #FFFFFF;
   --fg: #1A1A1A;
   --sub: #5C5C58;
-  --line: #DADAD5;
+  --faint: #8A8A85;
+  --line: #E1E1DC;
   --accent: #2F5BD3;
-  --accent-2: #8FA7EA;
-  --accent-3: #D9E2F8;
+  --accent-soft: #E6ECFA;
   --accent-ink: #1E3F9E;
   --warn: #A84A0A;
   --warn-soft: #FBEFE4;
+  --ok: #1F6B4A;
+  --ok-soft: #E3F2EA;
   --sans: 'IBM Plex Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #121315; --surface: #1B1C1F; --fg: #ECECEA; --sub: #A5A5A0; --line: #2E3034;
-    --accent: #7D9BF0; --accent-2: #3F5CB0; --accent-3: #23305A; --accent-ink: #B9C9F7;
-    --warn: #F0A56B; --warn-soft: #2E2118; color-scheme: dark;
+    --bg: #121315; --surface: #1B1C1F; --fg: #ECECEA; --sub: #A9A9A4; --faint: #85857F; --line: #2E3034;
+    --accent: #7D9BF0; --accent-soft: #232E52; --accent-ink: #B9C9F7;
+    --warn: #F0A56B; --warn-soft: #2E2118; --ok: #7CCBA2; --ok-soft: #17291F; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #121315; --surface: #1B1C1F; --fg: #ECECEA; --sub: #A5A5A0; --line: #2E3034;
-  --accent: #7D9BF0; --accent-2: #3F5CB0; --accent-3: #23305A; --accent-ink: #B9C9F7;
-  --warn: #F0A56B; --warn-soft: #2E2118; color-scheme: dark;
+  --bg: #121315; --surface: #1B1C1F; --fg: #ECECEA; --sub: #A9A9A4; --faint: #85857F; --line: #2E3034;
+  --accent: #7D9BF0; --accent-soft: #232E52; --accent-ink: #B9C9F7;
+  --warn: #F0A56B; --warn-soft: #2E2118; --ok: #7CCBA2; --ok-soft: #17291F; color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.65; }
-.wrap { max-width: 860px; margin: 0 auto; padding-inline: 20px; padding-block: 48px 72px; display: flex; flex-direction: column; gap: 56px; }
-h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.3; }
-h1 { font-size: clamp(28px, 4.5vw, 40px); font-weight: 700; }
-h2 { font-size: 22px; font-weight: 700; }
-h3 { font-size: 16px; font-weight: 600; }
-p { margin: 0; max-width: 68ch; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.6; word-break: keep-all; overflow-wrap: break-word; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 24px; padding-block: 56px 80px; display: flex; flex-direction: column; gap: 64px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: clamp(30px, 4.4vw, 44px); line-height: 1.25; font-weight: 700; text-wrap: balance; }
+h2 { font-size: 24px; line-height: 1.3; font-weight: 700; display: flex; align-items: baseline; gap: 12px; }
+h2 .no { font-family: var(--mono); font-size: 15px; color: var(--accent); font-weight: 600; }
 a { color: var(--accent); }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .06em; color: var(--accent); text-transform: uppercase; }
-.lead { color: var(--sub); font-size: 17px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-section { display: flex; flex-direction: column; gap: 18px; }
-header { display: flex; flex-direction: column; gap: 12px; }
+.muted { color: var(--sub); }
+.small { font-size: 13px; color: var(--faint); }
+section { display: flex; flex-direction: column; gap: 20px; }
+header { display: flex; flex-direction: column; gap: 14px; }
+.eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .08em; color: var(--accent); }
 
-/* Market figure */
-.market { display: grid; grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 36px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 28px; }
-.market svg { width: 100%; height: auto; max-width: 340px; }
-.tiers { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-.tier { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 14px; align-items: start; }
-.tier__key { font-family: var(--mono); font-weight: 600; font-size: 15px; padding: 3px 0; border-radius: 6px; text-align: center; }
-.k-tam { background: var(--accent-3); color: var(--accent-ink); }
-.k-sam { background: var(--accent-2); color: #fff; }
-.k-som { background: var(--accent); color: #fff; }
-.tier__value { font-size: 22px; font-weight: 700; line-height: 1.3; }
-.tier__desc { color: var(--sub); font-size: 14px; }
+/* key numbers */
+.keys { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.key { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.key b { font-family: var(--mono); font-size: 26px; font-weight: 600; color: var(--accent); line-height: 1.25; white-space: nowrap; }
+.key span { font-size: 14px; color: var(--sub); }
 
-.callout { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 6px; }
-.callout--warn { background: var(--warn-soft); border-color: transparent; }
-.callout--warn h3 { color: var(--warn); }
+/* row lists */
+.rows { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.rows > div { display: grid; gap: 20px; padding: 18px 24px; border-top: 1px solid var(--line); align-items: center; }
+.rows > div:first-child { border-top: 0; }
+.rows .head { background: var(--bg); padding-block: 10px; font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--faint); }
+.r-market > div { grid-template-columns: minmax(0, 1.15fr) 24px minmax(0, 1fr); }
+.r-market .arrow { color: var(--accent); font-weight: 700; text-align: center; }
+.r-problem > div { grid-template-columns: 72px minmax(0, 1fr) 120px; }
+.r-need > div { grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr); }
+.rows p { font-size: 15.5px; }
+.rows b.hl { color: var(--accent); }
 
-/* Evidence */
-.evidence { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.ev { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.ev__stat { font-family: var(--mono); font-size: 26px; font-weight: 600; color: var(--accent); line-height: 1.2; }
-.ev p { font-size: 14px; color: var(--sub); }
-.ev .src { font-size: 12px; margin-top: auto; }
+.chip { display: inline-flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 600; padding: 4px 10px; border-radius: 20px; white-space: nowrap; }
+.c-who { background: var(--accent-soft); color: var(--accent-ink); }
+.c-ok { background: var(--ok-soft); color: var(--ok); }
+.c-hyp { background: var(--warn-soft); color: var(--warn); }
+.c-chk { background: var(--bg); color: var(--sub); border: 1px solid var(--line); }
 
-/* Bar chart: market growth */
-.chart { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
-.bars { display: flex; flex-direction: column; gap: 10px; }
-.bar { display: grid; grid-template-columns: 150px minmax(0, 1fr) 90px; gap: 12px; align-items: center; font-size: 14px; }
-.bar__track { height: 14px; background: var(--accent-3); border-radius: 7px; overflow: hidden; }
-.bar__fill { height: 100%; background: var(--accent); border-radius: 7px; }
-.bar__fill--muted { background: var(--accent-2); }
-.bar__val { text-align: right; }
-.note { font-size: 13px; color: var(--sub); }
+.takeaway { font-size: 17px; font-weight: 600; padding: 16px 20px; border-radius: 14px; background: var(--accent-soft); color: var(--accent-ink); }
+.note { font-size: 14px; color: var(--sub); padding-left: 14px; border-left: 2px solid var(--line); }
 
-/* Steps / tables */
-.steps { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; list-style: none; counter-reset: s; }
-.steps li { counter-increment: s; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; }
-.steps li::before { content: counter(s); font-family: var(--mono); font-weight: 600; font-size: 13px; width: 26px; height: 26px; border-radius: 13px; display: flex; align-items: center; justify-content: center; background: var(--accent-3); color: var(--accent-ink); margin-top: 1px; }
-.formula { font-family: var(--mono); font-size: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; overflow-x: auto; white-space: nowrap; }
-.table-box { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
-th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); }
-th { font-size: 12px; font-weight: 600; letter-spacing: .04em; color: var(--sub); }
-tr:last-child td { border-bottom: 0; }
-td.r, th.r { text-align: right; }
-.tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 10px; background: var(--warn-soft); color: var(--warn); vertical-align: 1px; }
+/* players */
+.players { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.player { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.player h3 { font-size: 20px; }
+.player dl { margin: 0; display: grid; gap: 8px; }
+.player dt { font-size: 12px; font-weight: 600; letter-spacing: .04em; color: var(--faint); }
+.player dd { margin: 0; font-size: 15px; }
+.player.us { border: 2px solid var(--accent); background: var(--accent-soft); }
+.player.us h3 { color: var(--accent-ink); }
 
-.limits { display: flex; flex-direction: column; gap: 10px; margin: 0; padding-left: 20px; }
-.limits li { padding-left: 4px; }
-.sources { display: flex; flex-direction: column; gap: 6px; margin: 0; padding-left: 20px; font-size: 14px; color: var(--sub); }
+/* target + flow */
+.target { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px 26px; display: flex; flex-direction: column; gap: 6px; }
+.target strong { font-size: 19px; line-height: 1.5; }
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.flow div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; min-width: 0; }
+.flow i { font-style: normal; font-family: var(--mono); font-weight: 600; width: 30px; height: 30px; flex: none; border-radius: 15px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.flow b { font-size: 16px; white-space: nowrap; }
+
+/* pricing */
+.prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.price { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px 26px; display: flex; flex-direction: column; gap: 8px; }
+.price .who { font-size: 13px; font-weight: 600; color: var(--faint); letter-spacing: .04em; }
+.price .val { font-size: 36px; font-weight: 700; color: var(--accent); line-height: 1.2; }
+.price .per { font-size: 15px; color: var(--sub); }
+.price .calc { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 15px; display: flex; justify-content: space-between; gap: 12px; }
+.price .calc b { font-family: var(--mono); }
+
+/* market */
+.tam { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.tier { border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; border: 1px solid var(--line); background: var(--surface); }
+.tier .k { font-family: var(--mono); font-weight: 600; font-size: 14px; letter-spacing: .04em; }
+.tier .label { font-size: 14px; color: var(--sub); }
+.tier .big { font-size: 34px; font-weight: 700; line-height: 1.15; white-space: nowrap; }
+.tier ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; color: var(--sub); }
+.tier ul li { display: flex; justify-content: space-between; gap: 10px; border-top: 1px solid var(--line); padding-top: 6px; }
+.tier ul li b { color: var(--fg); font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+.t-tam .k { color: var(--sub); }
+.t-sam { background: var(--accent-soft); border-color: transparent; }
+.t-sam .k, .t-sam .big { color: var(--accent-ink); }
+.t-som { background: var(--accent); border-color: var(--accent); color: #fff; }
+.t-som .k, .t-som .label, .t-som ul, .t-som ul li b { color: #fff; }
+.t-som ul li { border-color: rgba(255,255,255,.3); }
+
+/* tasks */
+.tasks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.task { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; display: flex; flex-direction: column; gap: 4px; }
+.task b { font-size: 16px; }
+.task span { font-size: 14px; color: var(--sub); }
+
+.sources { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--sub); }
 .sources a { color: var(--sub); }
 .sources a:hover { color: var(--accent); }
-footer { font-size: 13px; color: var(--sub); border-top: 1px solid var(--line); padding-top: 18px; }
+footer { font-size: 13px; color: var(--faint); border-top: 1px solid var(--line); padding-top: 18px; }
 
-@media (max-width: 680px) {
-  .market { grid-template-columns: minmax(0, 1fr); padding: 20px; justify-items: center; }
-  .evidence { grid-template-columns: minmax(0, 1fr); }
-  .bar { grid-template-columns: 96px minmax(0, 1fr) 72px; font-size: 13px; }
+@media (max-width: 860px) {
+  .keys, .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .players, .tam, .prices, .tasks { grid-template-columns: minmax(0, 1fr); }
+  .r-market > div, .r-need > div { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .r-market .arrow, .r-need .arrow { text-align: left; }
+  .r-problem > div { grid-template-columns: minmax(0, 1fr); gap: 8px; justify-items: start; }
+  .rows .head { display: none; }
 }
 </style>
 <style>body{margin:0}</style>
@@ -116,166 +149,163 @@ footer { font-size: 13px; color: var(--sub); border-top: 1px solid var(--line); 
 
 <div class="wrap">
   <header>
-    <span class="eyebrow">KeepFit · 시장 분석</span>
-    <h1>GLP-1 단약 이후, 체중 유지 시장</h1>
-    <p class="lead">위고비·마운자로 치료를 끝낸 환자가 감량한 체중을 지키도록 돕는 서비스의 국내 연간 시장 규모입니다. 확인된 자료 위에 추정을 쌓았고, 가정한 부분은 따로 표시했습니다.</p>
+    <span class="eyebrow">KEEPFIT 시장조사 · 2026년 10월 기준</span>
+    <h1>GLP-1 감량·중단 전후 관리 서비스</h1>
+    <p class="muted">약물 치료로 목표 감량을 달성한 환자가 유지 단계로 넘어갈 때, 상태 확인과 생활습관 관리를 의원과 연결해 이어 가는 서비스의 시장성을 정리했습니다.</p>
+    <div class="keys">
+      <div class="key"><b>약 2.14조원</b><span>국내 GLP-1 비만약 매출 연환산</span></div>
+      <div class="key"><b>약 65%</b><span>비당뇨 사용자 1년 내 투약 중단</span></div>
+      <div class="key"><b>975–1,695억</b><span>TAM · 국내 연간 잠재 시장</span></div>
+      <div class="key"><b>약 20억원</b><span>SOM · 3년차 연 매출 목표</span></div>
+    </div>
   </header>
 
-  <section aria-labelledby="sum">
-    <h2 id="sum">한눈에 보기</h2>
-    <div class="market">
-      <svg viewBox="0 0 340 300" role="img" aria-label="TAM 안에 SAM, SAM 안에 SOM이 들어 있는 동심원">
-        <circle cx="170" cy="150" r="140" fill="var(--accent-3)"/>
-        <circle cx="170" cy="195" r="95" fill="var(--accent-2)"/>
-        <circle cx="170" cy="250" r="40" fill="var(--accent)"/>
-        <text x="170" y="48" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="16" fill="var(--accent-ink)">TAM</text>
-        <text x="170" y="68" text-anchor="middle" font-family="IBM Plex Sans KR, sans-serif" font-size="13" fill="var(--accent-ink)">600억~1,150억 원</text>
-        <text x="170" y="138" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="16" fill="#FFFFFF">SAM</text>
-        <text x="170" y="158" text-anchor="middle" font-family="IBM Plex Sans KR, sans-serif" font-size="13" fill="#FFFFFF">230억~460억 원</text>
-        <text x="170" y="248" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="600" font-size="15" fill="#FFFFFF">SOM</text>
-        <text x="170" y="266" text-anchor="middle" font-family="IBM Plex Sans KR, sans-serif" font-size="12" fill="#FFFFFF">약 35억 원</text>
-      </svg>
-      <div class="tiers">
-        <div class="tier">
-          <span class="tier__key k-tam">TAM</span>
-          <div>
-            <div class="tier__value"><span class="num">600억~1,150억</span> 원 / 년</div>
-            <div class="tier__desc">매년 GLP-1 비만치료를 끝내거나 중단하는 국내 환자 약 26만~50만 명</div>
-          </div>
-        </div>
-        <div class="tier">
-          <span class="tier__key k-sam">SAM</span>
-          <div>
-            <div class="tier__value"><span class="num">230억~460억</span> 원 / 년</div>
-            <div class="tier__desc">그중 의원급 비만 진료를 받았고, 감량에 성공해 유지 관리를 원할 만한 약 10만~20만 명</div>
-          </div>
-        </div>
-        <div class="tier">
-          <span class="tier__key k-som">SOM</span>
-          <div>
-            <div class="tier__value">약 <span class="num">35억</span> 원 / 년 <span class="note">(3년차)</span></div>
-            <div class="tier__desc">제휴 의원 150곳에서 등록하는 약 1.4만 명 · SAM의 8~15%</div>
-          </div>
-        </div>
-      </div>
+  <section aria-labelledby="s1">
+    <h2 id="s1"><span class="no">01</span>시장 현황과 전망</h2>
+    <div class="rows r-market">
+      <div class="head"><span>시장 변화</span><span></span><span>사업 기회</span></div>
+      <div><p>2026년 2분기 국내 마운자로·위고비 매출 <b class="hl">5,342억원</b>, 연환산 <b class="hl">약 2.14조원</b></p><span class="arrow">→</span><p>약물 치료 이후 관리로 연결할 수 있는 고객 기반 확대</p></div>
+      <div><p>약물과 생활습관 개입을 중단하면 체중이 다시 늘어나는 것이 임상연구에서 관찰됨</p><span class="arrow">→</span><p>감량 성과를 유지하기 위한 지속 관리 필요</p></div>
+      <div><p>투약 기록·식단·운동·AI 코칭 서비스는 이미 시장에 있음</p><span class="arrow">→</span><p>기존 서비스와 다른 환자 경험과 의원 운영 방식 필요</p></div>
+      <div><p>미국 실사용 연구에서 비당뇨 GLP-1 사용자의 <b class="hl">약 65%</b>가 1년 안에 투약을 중단</p><span class="arrow">→</span><p>감량·중단을 선택하는 환자에게 의료진과 연결된 상태 확인·생활습관 관리 제공</p></div>
     </div>
-    <div class="callout">
-      <h3>환자 한 명당 매출 약 23만 원 (6개월)</h3>
-      <p class="note">월 4.9만 원 × 3개월(집중기) + 월 2.9만 원 × 3개월(적응기). 첫 2주 무료와 7개월 이후 연장(월 1.9만 원)은 계산에서 뺐습니다. 병원 요금(프로 월 9.9만 원)은 SOM에만 더했습니다.</p>
+    <p class="note">GLP-1 치료가 퍼질수록 유지 관리 수요도 커질 수 있습니다. 다만 약품 시장 규모가 곧 유지 관리 시장 규모는 아니며, 실제 유료 수요는 따로 검증해야 합니다.</p>
+  </section>
+
+  <section aria-labelledby="s2">
+    <h2 id="s2"><span class="no">02</span>핵심 문제</h2>
+    <div class="rows r-problem">
+      <div class="head"><span>대상</span><span>문제</span><span>근거 수준</span></div>
+      <div><span class="chip c-who">환자</span><p>약물을 중단하면 감량한 체중이 다시 늘어날 수 있음</p><span class="chip c-ok">임상연구 확인</span></div>
+      <div><span class="chip c-who">환자</span><p>식욕·체중·생활습관을 꾸준히 기록하고 행동을 유지하기 번거로움</p><span class="chip c-hyp">인터뷰 검증 가설</span></div>
+      <div><span class="chip c-who">의원</span><p>내원 사이 환자 상태를 파악하고 후속 연락하는 데 인력과 시간이 듦</p><span class="chip c-chk">업무량 확인 필요</span></div>
+      <div><span class="chip c-who">환자·의원</span><p>상태 변화 발견부터 의료진 확인, 후속 관리까지 연결이 끊길 수 있음</p><span class="chip c-hyp">서비스 공백 가설</span></div>
+    </div>
+    <p class="takeaway">핵심 과제는 감량 이후에도 상태 확인과 생활습관 관리를 이어 가는 것입니다.</p>
+  </section>
+
+  <section aria-labelledby="s3">
+    <h2 id="s3"><span class="no">03</span>기존 플레이어와 KeepFit의 위치</h2>
+    <div class="players">
+      <article class="player">
+        <h3>삐약</h3>
+        <dl><dt>집중하는 문제</dt><dd>GLP-1 투약·감량 과정 관리</dd>
+        <dt>해결 방식</dt><dd>주사·체중·식단·운동 기록, 감량 그래프, 약물 농도 추정</dd>
+        <dt>시사점</dt><dd>GLP-1 기록 기능만으로는 차별화가 어려움</dd></dl>
+      </article>
+      <article class="player">
+        <h3>필라이즈</h3>
+        <dl><dt>집중하는 문제</dt><dd>일상적인 식단·운동·혈당 관리</dd>
+        <dt>해결 방식</dt><dd>건강 데이터 기반 AI 코칭과 생활습관 관리</dd>
+        <dt>시사점</dt><dd>개인화 AI 코칭 자체도 이미 경쟁 영역</dd></dl>
+      </article>
+      <article class="player us">
+        <h3>KeepFit</h3>
+        <dl><dt>집중하는 문제</dt><dd>감량 이후 유지 단계</dd>
+        <dt>해결 방식</dt><dd>AI 전화 체크인으로 기록 부담을 없애고, 환자 상태를 의원의 후속 관리로 연결</dd>
+        <dt>검증할 차별점</dt><dd>일상 기록 → 의료진 확인으로 이어지는 연결</dd></dl>
+      </article>
     </div>
   </section>
 
-  <section aria-labelledby="ev">
-    <h2 id="ev">근거 자료</h2>
-    <div class="evidence">
-      <div class="ev">
-        <span class="ev__stat">4,670억 원</span>
-        <h3>위고비 2025년 국내 매출</h3>
-        <p>3개 분기 연속 분기 매출 1,000억 원 이상.</p>
-        <a class="src" href="https://www.dailypharm.com/user/news/335995" target="_blank" rel="noreferrer">데일리팜</a>
-      </div>
-      <div class="ev">
-        <span class="ev__stat">분기 4,000억+</span>
-        <h3>마운자로 출시 1년</h3>
-        <p>누적 매출 1조 원에 육박, 국내 전체 의약품 매출 1위.</p>
-        <a class="src" href="https://www.dailypharm.com/user/news/341968" target="_blank" rel="noreferrer">데일리팜</a>
-      </div>
-      <div class="ev">
-        <span class="ev__stat">월 8만 건</span>
-        <h3>위고비 처방 (2025년 중반)</h3>
-        <p>출시 8개월 만에 누적 40만 건. 한 사람이 여러 장을 받을 수 있어 환자 수와는 다릅니다.</p>
-        <a class="src" href="https://dailypharm.com/user/news/2832" target="_blank" rel="noreferrer">데일리팜</a>
-      </div>
-      <div class="ev">
-        <span class="ev__stat">52%</span>
-        <h3>1년 안에 약을 끊는 비율</h3>
-        <p>덴마크 실사용 연구, 당뇨 없는 세마글루타이드 사용자. 3개월 18%, 6개월 31%. 미국 연구도 약 50%.</p>
-        <a class="src" href="https://www.news-medical.net/news/20250915/StudyHalf-of-adults-without-diabetes-taking-weight-loss-drug-discontinue-treatment-within-a-year.aspx" target="_blank" rel="noreferrer">News-Medical (EASD 2025 발표)</a>
-      </div>
-      <div class="ev">
-        <span class="ev__stat">2/3</span>
-        <h3>끊으면 돌아오는 체중</h3>
-        <p>세마글루타이드 중단 1년 후 감량분의 약 3분의 2 회복 (STEP 1 연장). 터제파타이드 중단군은 52주간 14% 재증가 (SURMOUNT-4).</p>
-        <a class="src" href="https://doi.org/10.1111/dom.14725" target="_blank" rel="noreferrer">Wilding 2022, Diabetes Obes Metab</a>
-      </div>
-      <div class="ev">
-        <span class="ev__stat">49.1%</span>
-        <h3>30대 남성 비만 유병률 (2024)</h3>
-        <p>성인 남성 48.8%, 여성 26.2%. GLP-1 시장 뒤에 있는 더 큰 잠재 수요.</p>
-        <a class="src" href="https://www.newsis.com/view/NISX20250930_0003349661" target="_blank" rel="noreferrer">뉴시스 (국민건강영양조사)</a>
-      </div>
+  <section aria-labelledby="s4">
+    <h2 id="s4"><span class="no">04</span>미충족 수요와 해결 방식</h2>
+    <div class="target">
+      <span class="small">초기 타깃</span>
+      <strong>의원에서 GLP-1 치료로 목표 감량을 달성하고, 의료진과 상의해 감량·중단 전후의 유지 단계로 넘어가는 환자</strong>
     </div>
-
-    <div class="chart" role="figure" aria-labelledby="chart-cap">
-      <h3 id="chart-cap">예측보다 빠르게 큰 시장</h3>
-      <div class="bars">
-        <div class="bar"><span>2024년 시장 (전망 자료)</span><div class="bar__track"><div class="bar__fill bar__fill--muted" style="width:10%"></div></div><span class="bar__val num">2,006억</span></div>
-        <div class="bar"><span>2030년 전망치</span><div class="bar__track"><div class="bar__fill bar__fill--muted" style="width:36%"></div></div><span class="bar__val num">7,253억</span></div>
-        <div class="bar"><span>2026년 실제 연환산</span><div class="bar__track"><div class="bar__fill" style="width:100%"></div></div><span class="bar__val num">약 2조</span></div>
-      </div>
-      <p class="note">2026년 값은 마운자로 분기 약 4,000억 원 × 4 + 위고비 분기 약 1,100억 원 × 4로 계산한 추정치입니다. 막대는 같은 축(2조 원 = 100%) 기준입니다.</p>
+    <div class="rows r-need">
+      <div class="head"><span>미충족 수요 가설</span><span></span><span>KeepFit의 해결 방식</span></div>
+      <div><p>앱을 직접 열어 기록하는 부담을 줄이고 싶다</p><span class="arrow">→</span><p>AI 전화로 식욕·체중·생활습관을 묻고 기록</p></div>
+      <div><p>내 상태에 맞는 행동을 꾸준히 유지하고 싶다</p><span class="arrow">→</span><p>개인 리포트와 실행 가능한 생활습관 안내</p></div>
+      <div><p>상태가 나빠질 때 담당 의료기관과 연결되고 싶다</p><span class="arrow">→</span><p>미리 정한 기준에 해당하면 의료진 확인 대상으로 전달</p></div>
+      <div><p>의원은 확인이 필요한 환자를 빠르게 찾고 싶다</p><span class="arrow">→</span><p>상태 요약, 확인 필요 환자 목록, 후속 관리 이력</p></div>
     </div>
+    <div class="flow" aria-label="핵심 사용 흐름">
+      <div><i>1</i><b>AI 체크인</b></div>
+      <div><i>2</i><b>상태 기록·요약</b></div>
+      <div><i>3</i><b>의료진 확인</b></div>
+      <div><i>4</i><b>후속 관리</b></div>
+    </div>
+    <p class="note">약물 감량·중단 결정은 의료진이 합니다. AI 전화의 체중 유지 효과와 업무 절감 효과는 파일럿에서 검증합니다.</p>
   </section>
 
-  <section aria-labelledby="calc">
-    <h2 id="calc">계산 과정</h2>
-    <h3>TAM</h3>
-    <ol class="steps">
-      <li><div>2026년 연 매출: 마운자로 약 1.6조 원 + 위고비 약 0.45조 원 = <b>약 2조 원</b></div></li>
-      <li><div>한 달 약값을 평균 약 35만 원으로 잡으면 동시에 투약 중인 환자는 <b>약 48만 명</b>
-        <div class="formula">2조 원 ÷ 12개월 ÷ 35만 원 ≈ 48만 명</div>
-        <span class="note">위고비 월 8만 건이던 때보다 시장이 약 4배 커진 것과도 대략 맞습니다.</span></div></li>
-      <li><div>1년 안에 약을 끊는 비율 52%를 적용하면 <b>약 26만 명</b>(보수적), 환자가 1년에 한 번 교체된다고 보면 <b>약 50만 명</b>(공격적)</div></li>
-      <li><div><div class="formula">26만~50만 명 × 23만 원 = 600억~1,150억 원</div></div></li>
-    </ol>
-
-    <h3>SAM</h3>
-    <div class="formula">TAM × 의원급 처방 비율 80% × 유지 관리 의향 50% ≈ 10만~20만 명 → 230억~460억 원</div>
-    <p class="note">80%와 50%는 공식 통계가 없어 둔 가정입니다 <span class="tag">가정</span></p>
-
-    <h3>SOM (단계별 목표)</h3>
-    <div class="table-box">
-      <table>
-        <thead><tr><th>시점</th><th class="r">제휴 의원</th><th class="r">의원당 월 등록</th><th class="r">연 등록 환자</th><th class="r">연 매출</th></tr></thead>
-        <tbody>
-          <tr><td>1년차 (파일럿)</td><td class="r num">20곳</td><td class="r num">5명</td><td class="r num">1,200명</td><td class="r num">약 3억 원</td></tr>
-          <tr><td>3년차</td><td class="r num">150곳</td><td class="r num">8명</td><td class="r num">약 1.4만 명</td><td class="r num">약 35억 원</td></tr>
-        </tbody>
-      </table>
+  <section aria-labelledby="s5">
+    <h2 id="s5"><span class="no">05</span>수익 모델</h2>
+    <div class="prices">
+      <div class="price">
+        <span class="who">환자</span>
+        <span class="val">월 5만원</span>
+        <span class="per">AI 체크인·리포트·체중 유지 프로그램</span>
+        <div class="calc"><span>평균 6개월 이용 가정</span><b>1인당 30만원</b></div>
+      </div>
+      <div class="price">
+        <span class="who">의원</span>
+        <span class="val">월 14만 9천원</span>
+        <span class="per">환자 모니터링·후속 관리 도구</span>
+        <div class="calc"><span>12개월 이용</span><b>1곳당 연 178.8만원</b></div>
+      </div>
     </div>
-    <p class="note">3년차 매출 = 환자 이용료 약 33억 원 + 병원 프로 요금 약 1.8억 원(150곳 × 월 9.9만 원 × 12개월). 의원 수와 등록 인원은 목표치입니다 <span class="tag">가정</span></p>
+    <p class="note">건강하게 체중의 20%를 줄이려면 보통 1년 6개월 정도 치료가 필요하다고 합니다. 앱 이용을 치료 과정에 포함하면 이용 기간을 6개월보다 크게 늘릴 수 있습니다. 가격과 이용 기간은 실제 결제·유지 데이터로 검증할 가정입니다.</p>
   </section>
 
-  <section aria-labelledby="lim">
-    <h2 id="lim">숫자의 한계</h2>
-    <ol class="limits">
-      <li><b>매출 기준.</b> 매출은 제약사 출고 기준이라 환자가 실제로 내는 약값보다 낮습니다. 그래서 환자 수는 적게 잡힌 쪽입니다.</li>
-      <li><b>당뇨 처방 포함.</b> 마운자로 매출에는 당뇨 처방분도 일부 들어 있습니다.</li>
-      <li><b>가정한 값.</b> 의원급 비율 80%, 유지 의향 50%, 의원당 등록 인원은 인터뷰로 확인이 필요합니다.</li>
-      <li><b>업계 기사 기반.</b> 매출과 처방 건수는 업계 기사가 출처입니다. 발표 자료에는 기사 원문과 날짜를 함께 적는 것을 권합니다.</li>
-    </ol>
-    <div class="callout callout--warn">
-      <h3>해커톤 중에 바로 확인하면 좋은 것</h3>
-      <p class="note">비만 클리닉 원장님께 "치료를 끝내는 환자가 한 달에 몇 명인지", 위고비·마운자로 경험자께 "유지 프로그램에 월 4.9만 원을 낼지"를 물어보면 SAM과 SOM의 가정을 실제 근거로 바꿀 수 있습니다.</p>
+  <section aria-labelledby="s6">
+    <h2 id="s6"><span class="no">06</span>TAM · SAM · SOM</h2>
+    <div class="tam">
+      <div class="tier t-tam">
+        <span class="k">TAM</span>
+        <span class="label">국내 전체 잠재 시장</span>
+        <span class="big">연 975–1,695억</span>
+        <ul>
+          <li>환자 26–50만 명 × 30만원<b>780–1,500억</b></li>
+          <li>의료기관 10,900곳 × 178.8만원<b>195억</b></li>
+        </ul>
+      </div>
+      <div class="tier t-sam">
+        <span class="k">SAM</span>
+        <span class="label">비만 진료 중심 의원과 적격 환자</span>
+        <span class="big">연 189–378억</span>
+        <ul>
+          <li>의원 500–1,000곳<b>9–18억</b></li>
+          <li>환자 연 6–12만 명 × 30만원<b>180–360억</b></li>
+        </ul>
+      </div>
+      <div class="tier t-som">
+        <span class="k">SOM</span>
+        <span class="label">3년차 · 계약 의원 평균 100곳</span>
+        <span class="big">연 약 20억</span>
+        <ul>
+          <li>유료 환자 6,000명 × 30만원<b>18억</b></li>
+          <li>의원 100곳 × 178.8만원<b>1.79억</b></li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">SAM 환자 수는 의원당 월 신규 적격 환자 10명 기준입니다. SOM은 100곳 × 월 10명 × 유료 등록률 50% × 12개월로 계산했습니다.</p>
+  </section>
+
+  <section aria-labelledby="s7">
+    <h2 id="s7"><span class="no">07</span>사업성 검증 과제</h2>
+    <div class="tasks">
+      <div class="task"><b>환자 유료 전환</b><span>월 5만원 결제 의향과 실제 등록률 50% 가정</span></div>
+      <div class="task"><b>평균 이용 기간</b><span>6개월 가정, 치료 과정 포함 시 연장 여부</span></div>
+      <div class="task"><b>의원 계약 의향</b><span>월 14만 9천원과 의원당 월 적격 환자 10명</span></div>
+      <div class="task"><b>업무 절감 효과</b><span>내원 사이 상태 파악·후속 연락 시간이 얼마나 줄어드는지</span></div>
+      <div class="task"><b>체중 유지 효과</b><span>AI 전화 체크인이 실제 유지율을 높이는지 파일럿으로 측정</span></div>
+      <div class="task"><b>기록 부담 가설</b><span>"기록이 번거롭다"는 문제를 환자 인터뷰로 확인</span></div>
     </div>
   </section>
 
   <section aria-labelledby="src">
-    <h2 id="src">출처</h2>
+    <h2 id="src"><span class="no">—</span>출처</h2>
     <ol class="sources">
-      <li><a href="https://www.dailypharm.com/user/news/335995" target="_blank" rel="noreferrer">데일리팜, 분기 매출 1천억 훌쩍…위고비·마운자로 비만약 시장 폭격</a></li>
-      <li><a href="https://www.dailypharm.com/user/news/341968" target="_blank" rel="noreferrer">데일리팜, '국내 상륙 1년' 마운자로 누적매출 1조 성큼</a></li>
-      <li><a href="https://dailypharm.com/user/news/2832" target="_blank" rel="noreferrer">데일리팜, 비만약 위고비 열풍…"DUR 기준 월 8만건 처방"</a></li>
-      <li><a href="https://www.bizhankook.com/articles/32464.html" target="_blank" rel="noreferrer">비즈한국, 위고비 월별 처방 건수</a></li>
-      <li><a href="https://www.news-medical.net/news/20250915/StudyHalf-of-adults-without-diabetes-taking-weight-loss-drug-discontinue-treatment-within-a-year.aspx" target="_blank" rel="noreferrer">News-Medical, Half of adults without diabetes taking weight-loss drug discontinue within a year</a></li>
-      <li><a href="https://www.sciencedaily.com/releases/2025/09/250913232157.htm" target="_blank" rel="noreferrer">ScienceDaily, GLP-1 discontinuation in real-world use</a></li>
-      <li><a href="https://doi.org/10.1111/dom.14725" target="_blank" rel="noreferrer">Wilding JPH et al. STEP 1 trial extension. Diabetes Obes Metab, 2022</a></li>
-      <li><a href="https://doi.org/10.1001/jama.2023.24945" target="_blank" rel="noreferrer">Aronne LJ et al. SURMOUNT-4. JAMA, 2024</a></li>
-      <li><a href="https://www.newsis.com/view/NISX20250930_0003349661" target="_blank" rel="noreferrer">뉴시스, 2024 국민건강영양조사 비만 유병률</a></li>
+      <li><a href="https://www.dailypharm.com/user/news/341968" target="_blank" rel="noreferrer">데일리팜, '국내 상륙 1년' 마운자로 누적매출 1조 성큼</a> · 2분기 5,342억원 합계는 팀 조사 수치</li>
+      <li><a href="https://www.healthday.com/healthpro-news/weight-loss/many-with-overweight-obesity-discontinue-glp-1-receptor-agonists-within-one-year" target="_blank" rel="noreferrer">Rodriguez PJ et al. Discontinuation and reinitiation of GLP-1 RAs. JAMA Netw Open. 2025;8(1):e2457349</a> · 비당뇨 1년 내 중단 64.8%</li>
+      <li><a href="https://doi.org/10.1111/dom.14725" target="_blank" rel="noreferrer">Wilding JPH et al. STEP 1 trial extension. Diabetes Obes Metab. 2022</a> · 중단 후 체중 재증가</li>
+      <li>의료기관 수, 의원당 적격 환자 수, 등록률은 팀 조사·가정</li>
     </ol>
   </section>
 
-  <footer>2026년 10월 기준 자료로 작성한 해커톤 피치용 추정입니다. 투자나 사업 판단에 쓰기 전에 원자료를 다시 확인하세요.</footer>
+  <footer>해커톤 피치용 추정입니다. 가격·이용 기간·등록률은 파일럿과 인터뷰로 검증할 가정입니다.</footer>
 </div>
 
 </body>
