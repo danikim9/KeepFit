@@ -16,7 +16,10 @@ export default function Alert() {
   const message = request?.message ?? alert?.message
   const booked = link.booking?.slot ?? bookedSlot
   const [picked, setPicked] = useState<string | null>(null)
-  const slot = picked && slots.includes(picked) ? picked : (slots[1] ?? slots[0])
+  const grouped = slots.length > 3
+  const slot = picked && slots.includes(picked) ? picked : grouped ? slots[0] : (slots[1] ?? slots[0])
+  const days = [...new Set(slots.map((s) => s.split('\n')[0]))]
+  const day = slot.split('\n')[0]
 
   if (!request && !alert) {
     return (
@@ -90,14 +93,46 @@ export default function Alert() {
         </section>
       ) : request || alert ? (
         <div className="stack" style={{ gap: 10 }}>
-          <span style={{ fontSize: 13, fontWeight: 600 }}>{request ? '원장님이 제안한 시간' : '가능한 시간'}</span>
-          <div className="slots">
-            {slots.map((s) => (
-              <button key={s} type="button" className="chip" aria-pressed={slot === s} onClick={() => setPicked(s)}>
-                {s}
-              </button>
-            ))}
-          </div>
+          <span style={{ fontSize: 13, fontWeight: 600 }}>{request ? '원장님이 열어 둔 시간 중에 골라 주세요' : '가능한 시간'}</span>
+          {grouped ? (
+            <>
+              {/* 시간이 많으면 날짜 → 시간 순서로 고르기 */}
+              <div className="day-tabs" role="group" aria-label="날짜">
+                {days.map((d) => {
+                  const [md, dow = ''] = d.split(' ')
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      className="chip day-chip"
+                      aria-pressed={d === day}
+                      onClick={() => setPicked(slots.find((s) => s.startsWith(d + '\n')) ?? null)}
+                    >
+                      <b>{md}</b>
+                      <span>{dow.replace(/[()]/g, '')}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="slots">
+                {slots
+                  .filter((s) => s.startsWith(day + '\n'))
+                  .map((s) => (
+                    <button key={s} type="button" className="chip" aria-pressed={slot === s} onClick={() => setPicked(s)}>
+                      {s.split('\n')[1]}
+                    </button>
+                  ))}
+              </div>
+            </>
+          ) : (
+            <div className="slots">
+              {slots.map((s) => (
+                <button key={s} type="button" className="chip" aria-pressed={slot === s} onClick={() => setPicked(s)}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ) : null}
 
