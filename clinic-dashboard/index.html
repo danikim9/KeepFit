@@ -413,7 +413,7 @@ function vSchedule(){
 /* ===== 4. 환자 초대 ===== */
 function qr(){let s=7;const r=()=>{s=(s*9301+49297)%233280;return s/233280};let h='';for(let y=0;y<12;y++)for(let x=0;x<12;x++){const c=(x<3&&y<3)||(x>8&&y<3)||(x<3&&y>8);const on=c?!((x%3===1)&&(y%3===1)):r()>.5;h+=`<i class="${on?'':'o'}"></i>`;}return h;}
 function vInvite(){return `
- <div class="head"><h1>환자 초대</h1><p>치료를 마친 환자에게 6개월 유지 프로그램을 권해요 · [패키지 가격]</p></div>
+ <div class="head"><h1>환자 초대</h1><p>목표 감량을 달성한 환자에게 유지 프로그램을 권해요 · 환자 이용료 월 5만원</p></div>
  <div class="two">
   <div class="card"><div class="row" style="gap:16px;flex-wrap:nowrap"><div class="qr" aria-hidden="true">${qr()}</div><div><h2>진료실에 두는 QR</h2><p class="muted s13" style="margin-top:4px">환자가 찍으면 환자 앱의 [병원 이름] 초대 화면이 열려요.</p></div></div>
    <div class="copy"><span>yujicare.kr/c/[병원코드]</span><button class="link" data-act="copy">복사</button></div>

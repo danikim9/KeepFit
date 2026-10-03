@@ -131,6 +131,8 @@ h1, p { margin: 0; }
 .tag { font-size: 12px; font-weight: 600; color: var(--accent-strong); background: var(--accent-soft); border-radius: 10px; padding: 4px 10px; }
 .tier { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 10px; }
 .tier.is-current { background: var(--accent-soft); }
+.price { flex-direction: row; align-items: baseline; flex-wrap: wrap; column-gap: 12px; row-gap: 2px; }
+.price__value { font-size: 24px; margin-right: auto; }
 
 .avatar { width: 36px; height: 36px; flex-shrink: 0; border-radius: 18px; border: 1.5px dashed var(--dash); }
 .logo-box {
