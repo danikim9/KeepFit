@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Scenario } from '../data/mock'
+import { clearLink, readLink, snapshot, startHeartbeat, writeLink } from './link'
 
 type State = {
   onboarded: boolean
@@ -52,10 +53,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     }
   }, [state])
 
+  // Keep the clinic dashboard's view of this patient current
+  useEffect(() => {
+    writeLink({ patient: { ...snapshot(state.scenario), callAt: readLink().patient?.callAt ?? null } })
+  }, [state.scenario])
+
+  useEffect(() => startHeartbeat(), [])
+
   const value: Ctx = {
     ...state,
     update: (patch) => setState((s) => ({ ...s, ...patch })),
-    reset: () => setState(initial),
+    reset: () => {
+      clearLink()
+      writeLink({ patient: snapshot(initial.scenario) })
+      setState({ ...initial })
+    },
   }
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>
 }

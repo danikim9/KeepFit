@@ -1,0 +1,103 @@
+// Live link between the patient app and the clinic dashboard (clinic-dashboard/index.html).
+// Both pages are served from the same origin, share one localStorage record, and pick up
+// each other's writes through the browser's `storage` event. No server involved.
+import { useEffect, useState } from 'react'
+import { scenarios, type Line, type Scenario } from '../data/mock'
+
+export const LINK_KEY = 'keepfit-link'
+export const ALIVE_KEY = 'keepfit-patient-alive'
+
+export type PatientSnapshot = {
+  scenario: Scenario
+  weight: number
+  appetite: number // today
+  appetiteAvg: number // 7-day average
+  sleep: number
+  weekly: { weight: number[]; appetite: number[] }
+  said: string
+  note: string
+  transcript: Line[]
+  callAt: number | null // set when a call finishes
+}
+
+export type Link = {
+  patient?: PatientSnapshot
+  visitRequest?: { slots: string[]; message: string; signals?: string; at: number } | null
+  booking?: { slot: string; at: number } | null
+  memos?: { lines: string[]; tags: string[]; at: number }[]
+}
+
+export function readLink(): Link {
+  try {
+    return JSON.parse(localStorage.getItem(LINK_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
+
+export function writeLink(patch: Partial<Link>) {
+  try {
+    localStorage.setItem(LINK_KEY, JSON.stringify({ ...readLink(), ...patch }))
+  } catch {
+    // storage unavailable; the dashboard just won't see this change
+  }
+  // `storage` only fires in other tabs, so tell this tab too
+  window.dispatchEvent(new Event('keepfit-link'))
+}
+
+export function clearLink() {
+  try {
+    localStorage.removeItem(LINK_KEY)
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(new Event('keepfit-link'))
+}
+
+export function useLink(): Link {
+  const [link, setLink] = useState<Link>(readLink)
+  useEffect(() => {
+    const sync = () => setLink(readLink())
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === LINK_KEY || e.key === null) sync()
+    }
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('keepfit-link', sync)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('keepfit-link', sync)
+    }
+  }, [])
+  return link
+}
+
+export function snapshot(scenario: Scenario, callAt: number | null = null): PatientSnapshot {
+  const d = scenarios[scenario]
+  const said = [...d.transcript].reverse().find((l) => l.who === 'me' && /배고|당겼/.test(l.text))
+  return {
+    scenario,
+    weight: d.weekly.weight[d.weekly.weight.length - 1],
+    appetite: d.today.appetite,
+    appetiteAvg: d.call.appetiteAvg,
+    sleep: d.call.sleep,
+    weekly: d.weekly,
+    said: said?.text ?? '',
+    note: d.call.note,
+    transcript: d.transcript,
+    callAt,
+  }
+}
+
+// Lets the dashboard know a patient app tab is open (so it waits for a real booking).
+export function startHeartbeat() {
+  const beat = () => {
+    try {
+      localStorage.setItem(ALIVE_KEY, String(Date.now()))
+    } catch {
+      /* ignore */
+    }
+  }
+  beat()
+  const id = setInterval(beat, 2000)
+  return () => clearInterval(id)
+}

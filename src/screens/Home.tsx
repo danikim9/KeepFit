@@ -3,11 +3,17 @@ import { Icon } from '../components/Icon'
 import { Screen } from '../components/Layout'
 import { missions, patient, program, scenarios, stages } from '../data/mock'
 import { useAppState } from '../state/AppState'
+import { useLink, writeLink } from '../state/link'
 
 export default function Home() {
   const { scenario, callTime, missionsDone, bookedSlot, update, reset } = useAppState()
+  const link = useLink()
   const data = scenarios[scenario]
+  const request = link.visitRequest
+  const booked = link.booking?.slot ?? bookedSlot
   const isRisk = scenario === 'risk'
+  const showAlert = isRisk || !!request
+  const memo = link.memos?.[link.memos.length - 1]
   const inRange = Math.abs(data.today.weight - patient.targetWeight) <= patient.rangeKg
 
   return (
@@ -17,22 +23,22 @@ export default function Home() {
           <span className="eyebrow">{patient.clinic} 유지 프로그램</span>
           <b style={{ fontSize: 20 }}>{patient.name}님, 좋은 저녁이에요</b>
         </div>
-        <Link to={isRisk ? '/alert' : '/summary'} className="icon-btn" aria-label="알림" style={{ color: 'var(--text)' }}>
+        <Link to={showAlert ? '/alert' : '/summary'} className="icon-btn" aria-label="알림" style={{ color: 'var(--text)' }}>
           <Icon name="bell" />
-          {isRisk && !bookedSlot && <span className="dot" />}
+          {showAlert && !booked && <span className="dot" />}
         </Link>
       </header>
 
-      {isRisk && (
+      {showAlert && (
         <Link to="/alert" className="card card--warn" style={{ flexDirection: 'row', alignItems: 'center', textDecoration: 'none', color: 'var(--text)' }}>
           <div className="badge-icon badge-icon--warn">
             <Icon name="alert" size={18} />
           </div>
           <div className="stack spacer" style={{ gap: 2 }}>
             <b style={{ fontSize: 15 }} className="text-warn-strong">
-              {bookedSlot ? '내원 예약이 확정됐어요' : '원장님이 내원을 요청했어요'}
+              {booked ? '내원 예약이 확정됐어요' : request ? '원장님이 내원을 요청했어요' : '식욕·체중이 기준을 넘었어요'}
             </b>
-            <span className="small">{bookedSlot ? bookedSlot.replace('\n', ' ') : '식욕·체중이 기준을 넘었어요'}</span>
+            <span className="small">{booked ? booked.replace('\n', ' ') : request ? `가능한 시간 ${request.slots.length}개 중에서 골라 주세요` : '원장님이 확인하고 있어요'}</span>
           </div>
           <Icon name="forward" size={18} />
         </Link>
@@ -117,16 +123,32 @@ export default function Home() {
       <section className="card card--dashed" style={{ flexDirection: 'row', gap: 12 }}>
         <div className="avatar" />
         <div className="stack" style={{ gap: 2 }}>
-          <span className="small">{patient.doctor} 원장님 · 2일 전</span>
-          <span style={{ fontSize: 14, lineHeight: 1.5 }}>
-            체중 잘 유지하고 계세요. 다음 주에 0.25mg으로 한 단계 더 줄여볼게요.
+          <span className="small">
+            {patient.doctor} 원장님 · {memo ? timeAgo(memo.at) : '2일 전'}
           </span>
+          {memo ? (
+            memo.lines.map((l) => (
+              <span key={l} style={{ fontSize: 14, lineHeight: 1.5 }}>
+                {l}
+              </span>
+            ))
+          ) : (
+            <span style={{ fontSize: 14, lineHeight: 1.5 }}>
+              체중 잘 유지하고 계세요. 다음 주에 0.25mg으로 한 단계 더 줄여볼게요.
+            </span>
+          )}
         </div>
       </section>
 
       <div className="demo-bar" aria-label="데모 조작">
         <span>데모</span>
-        <button type="button" onClick={() => update({ scenario: isRisk ? 'normal' : 'risk', bookedSlot: null })}>
+        <button
+          type="button"
+          onClick={() => {
+            update({ scenario: isRisk ? 'normal' : 'risk', bookedSlot: null })
+            writeLink({ visitRequest: null, booking: null })
+          }}
+        >
           {isRisk ? '정상 시나리오로' : '위험 신호 시나리오로'}
         </button>
         <button type="button" onClick={reset}>
@@ -135,4 +157,11 @@ export default function Home() {
       </div>
     </Screen>
   )
+}
+
+function timeAgo(at: number) {
+  const min = Math.floor((Date.now() - at) / 60000)
+  if (min < 1) return '방금'
+  if (min < 60) return `${min}분 전`
+  return `${Math.floor(min / 60)}시간 전`
 }

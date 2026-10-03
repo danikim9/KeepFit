@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon'
 import { Screen } from '../components/Layout'
 import { scenarios } from '../data/mock'
 import { useAppState } from '../state/AppState'
+import { snapshot, writeLink } from '../state/link'
 
 // Simulated call for the demo; the real call is placed by the voice agent.
 export default function LiveCall() {
@@ -14,6 +15,12 @@ export default function LiveCall() {
   const navigate = useNavigate()
   const logRef = useRef<HTMLDivElement>(null)
 
+  // Hang up: send what the call recorded to the clinic dashboard, then show the summary
+  const finish = () => {
+    writeLink({ patient: snapshot(scenario, Date.now()) })
+    navigate('/summary')
+  }
+
   useEffect(() => {
     const tick = setInterval(() => setSeconds((s) => s + 1), 1000)
     return () => clearInterval(tick)
@@ -21,12 +28,12 @@ export default function LiveCall() {
 
   useEffect(() => {
     if (shown >= lines.length) {
-      const done = setTimeout(() => navigate('/summary'), 1800)
+      const done = setTimeout(finish, 1800)
       return () => clearTimeout(done)
     }
     const next = setTimeout(() => setShown((n) => n + 1), 1400)
     return () => clearTimeout(next)
-  }, [shown, lines.length, navigate])
+  }, [shown, lines.length])
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: 'smooth' })
@@ -54,7 +61,7 @@ export default function LiveCall() {
           ))}
         </div>
 
-        <button type="button" className="call__end" aria-label="통화 종료" onClick={() => navigate('/summary')}>
+        <button type="button" className="call__end" aria-label="통화 종료" onClick={finish}>
           <Icon name="phone" size={28} />
         </button>
       </div>

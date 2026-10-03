@@ -187,6 +187,11 @@ td.w{color:var(--warn)}td.d{color:var(--danger)}td.f{color:var(--faint)}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--inverse);color:var(--inverse-fg);padding:12px 16px;border-radius:12px;font-size:14px;font-weight:500;z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.2);max-width:calc(100% - 32px)}
 
+.applink{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);text-decoration:none;border:1px solid var(--div);border-radius:10px;padding:8px 10px}
+.applink:hover{border-color:var(--accent);color:var(--accent)}
+.applink .dot{width:8px;height:8px;border-radius:4px;background:var(--faint);flex:none}
+.applink.on{color:var(--accent-dark);border-color:var(--accent-tint);background:var(--accent-tint)}
+.applink.on .dot{background:var(--accent)}
 @media (max-width:1180px){.split{grid-template-columns:minmax(0,1fr)}.week{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:900px){
   .app{grid-template-columns:minmax(0,1fr)}
@@ -204,6 +209,7 @@ td.w{color:var(--warn)}td.d{color:var(--danger)}td.f{color:var(--faint)}
 <aside class="sidebar">
   <div class="brand"><div class="logo">유</div><div><b>유지케어</b><small>[병원 이름] 의원</small></div></div>
   <nav class="snav" id="nav" aria-label="병원 메뉴"></nav>
+  <a class="applink" id="applink" href="../#/home" target="keepfit-patient"><span class="dot"></span><span id="applinkText">환자 앱 열기</span></a>
   <div class="coach"><small>AI 코치 전화</small><b id="coachTime">매일 저녁 9:00</b><small>어젯밤 24명 중 22명 응답</small></div>
   <div class="me"><div class="avatar"></div><div><b>[원장 이름] 원장</b><small>관리자</small></div></div>
 </aside>
@@ -248,6 +254,48 @@ const init=()=>({tab:'patients',sel:'jieun',visit:{},offered:{},booked:{},memos:
  cfg:{time:'저녁 9:00',weight:true,appetite:true,miss:true,slots:OPEN.map(()=>true),tags:TAGS.map((_,i)=>i<8)}});
 let S=init(),toastT=null;
 
+/* ===== live link with the patient app (same origin, shared localStorage) ===== */
+const LINK_KEY='keepfit-link',ALIVE_KEY='keepfit-patient-alive',BAND=[68,72];
+const VISIT_MSG='걱정할 단계는 아니에요. 지금 잡으면 충분히 돌아갈 수 있으니 이번 주에 한번 들러 주세요.';
+const RISK_SIGNALS='식욕 7일 평균 8.2 · 2주간 체중 +2.4kg';
+const readLink=()=>{try{return JSON.parse(localStorage.getItem(LINK_KEY)||'{}')}catch(e){return {}}};
+const writeLink=patch=>{try{localStorage.setItem(LINK_KEY,JSON.stringify({...readLink(),...patch}))}catch(e){}};
+const patientAlive=()=>{try{return Date.now()-(+localStorage.getItem(ALIVE_KEY)||0)<6000}catch(e){return false}};
+const hhmm=t=>{const d=new Date(t);return d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')};
+// Rebuild 이지은's card, call row and transcript from what the patient app reports
+function applyPatient(){
+ const lp=readLink().patient;if(!lp)return;
+ const p=P('jieun'),over=lp.weight>BAND[1],high=lp.appetiteAvg>=8;
+ p.st=over?'danger':high?'warn':'ok';p.stl={danger:'위험',warn:'주의',ok:'안정'}[p.st];
+ p.reason=over?`체중 범위 초과 · 식욕 ${lp.appetite}`:high?`식욕 7일 평균 ${lp.appetiteAvg}`:lp.appetite>=7?`식욕 ${lp.appetite} · 지켜보는 중`:'모든 값 범위 안';
+ p.t=[['체중',lp.weight.toFixed(1),'kg',`범위(${BAND[0]}–${BAND[1]}) ${over?'초과':'안'}`,over?'bad':'','w'],
+      ['식욕 · 7일 평균',String(lp.appetiteAvg),'/10',high?'주의 기준 8 넘음':'기준 8 아래',high?'mid':'','a'],
+      ['수면',String(lp.sleep),'시간',lp.sleep<6?'평소보다 짧음':'목표 7시간','','']];
+ p.w=lp.weekly.weight;p.a=lp.weekly.appetite;p.band=BAND;
+ p.call=lp.callAt?`방금 ${hhmm(lp.callAt)} 통화 · 2분 14초`:'어젯밤 9:02 통화 · 2분 14초';
+ p.said=`“${lp.said}”`;p.signals=lp.scenario==='risk'?RISK_SIGNALS:(over||high?`식욕 7일 평균 ${lp.appetiteAvg} · 체중 ${lp.weight}kg`:undefined);
+ const c=CALLS.find(x=>x[0]==='jieun');
+ c.splice(2,7,lp.callAt?hhmm(lp.callAt):'9:02','2분 14초',lp.weight.toFixed(1),String(lp.appetite),String(lp.sleep),lp.note,p.st==='ok'?'':p.st);
+ TRANSCRIPT.splice(0,TRANSCRIPT.length,...lp.transcript.map(l=>[l.who,l.text]));
+}
+// Mirror 이지은's visit request / booking from the shared record
+function syncVisit(){
+ const L=readLink();
+ if(L.visitRequest){S.visit.jieun=true;S.offered.jieun=L.visitRequest.slots;}else{delete S.visit.jieun;delete S.offered.jieun;}
+ if(L.booking)S.booked.jieun=L.booking.slot;else delete S.booked.jieun;
+}
+function paintAlive(){const on=patientAlive(),el=document.getElementById('applink');if(!el)return;el.classList.toggle('on',on);document.getElementById('applinkText').textContent=on?'환자 앱 연결됨':'환자 앱 열기';}
+let lastLink=readLink();
+window.addEventListener('storage',e=>{
+ if(e.key!==LINK_KEY&&e.key!==null)return;
+ const L=readLink(),prev=lastLink;lastLink=L;
+ applyPatient();syncVisit();render();
+ const lp=L.patient;
+ if(lp&&lp.callAt&&lp.callAt!==(prev.patient&&prev.patient.callAt))toast(`이지은님 AI 통화가 끝났어요 · ${P('jieun').reason}`);
+ else if(L.booking&&(!prev.booking||prev.booking.slot!==L.booking.slot))toast(`이지은님이 ${slot1(L.booking.slot)}로 예약했어요`);
+ else if(lp&&prev.patient&&lp.scenario!==prev.patient.scenario)toast(`이지은님 상태가 바뀌었어요 · ${P('jieun').stl}`);
+});
+
 /* ===== helpers ===== */
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const chip=(k,t)=>`<span class="chip ${k}">${t}</span>`;
@@ -277,7 +325,7 @@ function vPatients(){
  if(S.vsheet){const n=S.vdraft.length;
   actions=`<div class="sheet"><div class="between"><h2>언제 오시면 될까요?</h2><span class="faint small">비어 있는 진료 시간 · 고른 시간만 환자에게 보여요</span></div>
    ${slotsOn.length?`<div class="slotgrid">${slotsOn.map(([o,i])=>`<button class="tag" data-vslot="${i}" aria-pressed="${S.vdraft.includes(i)}">${o.replace('\n','<br>')}</button>`).join('')}</div>`:`<p class="muted s13">제안할 수 있는 시간이 없어요. 설정에서 진료 시간을 켜 주세요.</p>`}
-   <div class="preview"><small>환자 앱에 함께 가는 내용</small><ul>${p.signals?`<li>${p.signals}</li>`:''}<li>걱정할 단계는 아니에요. 지금 잡으면 충분히 돌아갈 수 있으니 이번 주에 한번 들러 주세요.</li>${n?`<li>가능한 시간 ${n}개 중에서 고르기</li>`:''}</ul></div>
+   <div class="preview"><small>환자 앱에 함께 가는 내용</small><ul>${p.signals?`<li>${p.signals}</li>`:''}<li>${VISIT_MSG}</li>${n?`<li>가능한 시간 ${n}개 중에서 고르기</li>`:''}</ul></div>
    <div class="actions"><button class="btn" data-act="vsheet-close">취소</button><button class="btn primary wide" data-act="visit" ${n?'':'disabled'}>${n?`시간 ${n}개와 함께 보내기`:'가능한 시간을 골라 주세요'}</button></div></div>`;
  }else if(S.sheet){const n=S.draft.length;
   actions=`<div class="sheet"><div class="between"><h2>${p.name}님께 메모</h2><span class="faint small">누르기만 하면 돼요 · 여러 개 가능</span></div>
@@ -408,8 +456,8 @@ function render(){const nc=needCount();
  document.getElementById('main').innerHTML=V[S.tab]();
  document.getElementById('coachTime').textContent='매일 '+S.cfg.time;
 }
-// Demo stand-in for the patient app: the patient picks the first offered time a few seconds later.
-function bookLater(id){setTimeout(()=>{if(!S.visit[id]||S.booked[id])return;S.booked[id]=S.offered[id][0];render();toast(`${P(id).name}님이 ${slot1(S.booked[id])}로 예약했어요`);},6000);}
+// Used only when no patient app tab is open (or for the other demo patients).
+function bookLater(id){setTimeout(()=>{if(!S.visit[id]||S.booked[id])return;S.booked[id]=S.offered[id][0];if(id==='jieun'){writeLink({booking:{slot:S.booked[id],at:Date.now()}});lastLink=readLink();}render();toast(`${P(id).name}님이 ${slot1(S.booked[id])}로 예약했어요`);},6000);}
 
 document.addEventListener('click',e=>{
  const t=e.target.closest('[data-tab],[data-sel],[data-tag],[data-vslot],[data-act],[data-call],[data-cf],[data-goto],[data-time],[data-cslot],[data-ctag]');if(!t)return;
@@ -427,17 +475,21 @@ document.addEventListener('click',e=>{
  const a=d.act,p=P(S.sel);
  if(a==='vsheet'){S.vsheet=true;S.sheet=false;S.vdraft=[];render();}
  else if(a==='vsheet-close'){S.vsheet=false;S.vdraft=[];render();}
- else if(a==='visit'){S.offered[p.id]=S.vdraft.map(i=>OPEN[i]);S.visit[p.id]=true;S.vsheet=false;S.vdraft=[];render();toast(`${p.name}님 앱으로 내원 요청과 시간 ${S.offered[p.id].length}개를 보냈어요`);bookLater(p.id);}
+ else if(a==='visit'){S.offered[p.id]=S.vdraft.map(i=>OPEN[i]);S.visit[p.id]=true;S.vsheet=false;S.vdraft=[];
+  if(p.id==='jieun'){writeLink({visitRequest:{slots:S.offered[p.id],message:VISIT_MSG,signals:p.signals,at:Date.now()},booking:null});lastLink=readLink();}
+  render();toast(`${p.name}님 앱으로 내원 요청과 시간 ${S.offered[p.id].length}개를 보냈어요`);
+  if(p.id!=='jieun'||!patientAlive())bookLater(p.id);}
  else if(a==='sheet'){S.sheet=true;S.vsheet=false;S.draft=[];render();}
  else if(a==='sheet-close'){S.sheet=false;S.draft=[];render();}
- else if(a==='memo'){(S.memos[p.id]=S.memos[p.id]||[]).push({tags:S.draft.slice(),t:'방금'});S.sheet=false;S.draft=[];render();toast(`${p.name}님 앱 홈에 메모가 떴어요`);}
+ else if(a==='memo'){(S.memos[p.id]=S.memos[p.id]||[]).push({tags:S.draft.slice(),t:'방금'});
+  if(p.id==='jieun'){const L=readLink();writeLink({memos:[...(L.memos||[]),{lines:S.draft.map(t=>SENT[t]),tags:S.draft.slice(),at:Date.now()}]});lastLink=readLink();}S.sheet=false;S.draft=[];render();toast(`${p.name}님 앱 홈에 메모가 떴어요`);}
  else if(a==='stable'){S.showStable=true;render();}
  else if(a==='toast')toast(d.msg);
  else if(a==='copy'){const txt='yujicare.kr/c/[병원코드]';try{navigator.clipboard.writeText(txt).then(()=>toast('링크를 복사했어요'),()=>toast(txt));}catch(err){toast(txt);}}
 });
 document.addEventListener('change',e=>{const k=e.target.dataset&&e.target.dataset.cfg;if(k){S.cfg[k]=e.target.checked;toast(e.target.checked?'알림을 켰어요':'알림을 껐어요');}});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.call){S.callSel=e.target.dataset.call;render();}});
-render();
+applyPatient();syncVisit();render();paintAlive();setInterval(paintAlive,2000);
 </script>
 
 </body>

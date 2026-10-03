@@ -51,6 +51,7 @@ export type Line = { who: 'ai' | 'me'; text: string }
 
 type ScenarioData = {
   today: { weight: number; appetite: number; sleep: number }
+  call: { sleep: number; note: string; appetiteAvg: number } // what the latest AI call recorded (sent to the clinic)
   appetiteNote: string
   summary: { label: string; value: string; warn?: boolean }[]
   transcript: Line[]
@@ -64,6 +65,7 @@ type ScenarioData = {
 export const scenarios: Record<Scenario, ScenarioData> = {
   normal: {
     today: { weight: 70.4, appetite: 6, sleep: 6.5 },
+    call: { sleep: 5.5, note: '밤에 라면이 당겼다고 함 · 근력 운동 20분', appetiteAvg: 5.4 },
     appetiteNote: '지난주보다 ↑',
     summary: [
       { label: '체중', value: '70.4kg' },
@@ -98,6 +100,7 @@ export const scenarios: Record<Scenario, ScenarioData> = {
   },
   risk: {
     today: { weight: 72.6, appetite: 9, sleep: 5 },
+    call: { sleep: 5, note: '하루 종일 배고팠다고 함 · 체중 계속 상승', appetiteAvg: 8.2 },
     appetiteNote: '주의 기준 초과',
     summary: [
       { label: '체중', value: '72.6kg · 유지 범위 초과', warn: true },
