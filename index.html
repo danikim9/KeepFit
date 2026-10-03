@@ -671,8 +671,17 @@ function store(key, fallback) {
 const SESSION = store('keepfit-landing-session', () =>
   (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)))
 
-// local dev runs don't count (add ?track=1 to test collection locally)
-const TRACK = !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname) || qs.has('track')
+// Not counted: local dev runs, and browsers opted out with ?track=0 (remembered on this device).
+// ?track=1 turns collection back on (and enables it on localhost for testing).
+const trackParam = qs.get('track')
+let optedOut = false
+try {
+  if (trackParam === '0') localStorage.setItem('keepfit-notrack', '1')
+  if (trackParam === '1') localStorage.removeItem('keepfit-notrack')
+  optedOut = localStorage.getItem('keepfit-notrack') === '1'
+} catch {}
+const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+const TRACK = trackParam === '1' || (!isLocal && !optedOut && trackParam !== '0')
 function send(table, row) {
   if (!TRACK) return Promise.resolve()
   return fetch(SB_URL + table, {

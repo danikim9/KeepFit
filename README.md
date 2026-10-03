@@ -81,6 +81,7 @@ npm run dev
 
 - 가격 바꿔 테스트: `?price=12900`처럼 붙이면 그 가격으로 보여주고 응답에 함께 저장돼요.
 - 유입 경로 구분: `?utm_source=instagram&utm_campaign=ad1`
+- 내 방문 빼기: `?track=0`을 붙여 한 번 열면 그 브라우저에서는 이후 계속 수집하지 않아요 (`?track=1`로 다시 켜기). 휴대폰·노트북 등 기기마다 한 번씩 열어 주세요.
 - `localhost`에서 열면 수집하지 않아요 (`?track=1`을 붙이면 수집).
 
 **구글 스프레드시트로 보기**: [KeepFit 지불 의사 테스트 결과](https://docs.google.com/spreadsheets/d/1bHTx9IAA6XEv-6ISGTjLCkBiohvFwChb4EitIBh97JY/edit) (소유자만 접근)
