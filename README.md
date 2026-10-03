@@ -16,10 +16,15 @@ GLP-1(위고비·마운자로) 감량 치료를 마친 환자의 **체중 유지
 | 발표자료 | [`docs/pitch/KeepFit-pitch.pdf`](docs/pitch/KeepFit-pitch.pdf) · [HTML](docs/pitch/KeepFit-pitch.html) | 문제·해결·기능(개념 화면)·시장·비즈니스 모델·수익성, 13장 |
 | 와이어프레임 (환자 앱 8화면) | [Claude 디자인 캔버스](https://claude.ai/artifact/RjFiCd5qQcEYxxS5Ja3itT) | 링크가 있으면 누구나 보기 가능 |
 
-**환자 앱과 병원 대시보드는 실시간으로 연동돼요.** `npm run dev` 후 두 탭을 나란히 열어 주세요.
+**환자 앱과 병원 대시보드는 실시간으로 연동돼요.** 시연할 때는 두 화면을 한 화면에 띄운 **연동 시연 페이지**를 쓰면 돼요.
 
-- 환자 앱: http://localhost:5173/
-- 병원 대시보드: http://localhost:5173/clinic-dashboard/
+| | 배포 (Vercel) | 로컬 (`npm run dev`) |
+| --- | --- | --- |
+| 연동 시연 (대시보드 + 환자 앱 한 화면) | https://keep-fit-lovat.vercel.app/demo/ | http://localhost:5173/demo/ |
+| 환자 앱 | https://keep-fit-lovat.vercel.app/ | http://localhost:5173/ |
+| 병원 대시보드 | https://keep-fit-lovat.vercel.app/clinic-dashboard/ | http://localhost:5173/clinic-dashboard/ |
+
+연동은 같은 브라우저 안에서만 돼요(서버 없이 `localStorage` 사용). 연동 시연 페이지 위쪽의 **홈에서 시작** / **처음부터 (온보딩)** 으로 데모를 초기화하고, 가운데 화살표가 방금 어느 쪽으로 무엇이 넘어갔는지 보여줘요.
 
 환자가 AI 통화를 마치면 대시보드에 바로 반영되고, 원장님이 고른 시간으로 내원 요청을 보내면 환자 앱에 뜨고, 환자가 예약하면 대시보드에 확정으로 바뀌어요. 원장님 메모도 환자 앱 홈에 떠요. 자세한 내용은 [대시보드 설명](clinic-dashboard/README.md#환자-앱과-실시간-연동)을 보세요.
 
@@ -65,7 +70,7 @@ npm run dev
 
 ## 데모 시나리오
 
-**발표용 (두 화면 연동)**: 왼쪽에 병원 대시보드, 오른쪽에 환자 앱(휴대폰 크기)을 띄워요.
+**발표용 (두 화면 연동)**: [연동 시연 페이지](https://keep-fit-lovat.vercel.app/demo/)를 열고 **홈에서 시작**을 눌러요. 왼쪽이 병원 대시보드, 오른쪽이 환자 앱(휴대폰 프레임)이에요.
 
 1. 환자 앱 홈 맨 아래 **데모 → 위험 신호 시나리오로**, 이어서 **지금 받기**로 AI 통화
 2. 통화가 끝나면 대시보드에서 이지은이 **위험**으로 올라옴

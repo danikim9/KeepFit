@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/clinic", "destination": "/clinic-dashboard/", "permanent": false },
+    { "source": "/clinic-dashboard", "destination": "/clinic-dashboard/", "permanent": false },
+    { "source": "/demo", "destination": "/demo/", "permanent": false }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+    }
+  ]
+}
