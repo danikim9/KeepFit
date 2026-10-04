@@ -2,7 +2,10 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppStateProvider, useAppState } from './state/AppState'
 import Invite from './screens/Invite'
 import Program from './screens/Program'
-import CallSetup from './screens/CallSetup'
+import RecordSetup from './screens/RecordSetup'
+import CheckIn from './screens/CheckIn'
+import Sos from './screens/Sos'
+import Ask from './screens/Ask'
 import Home from './screens/Home'
 import LiveCall from './screens/LiveCall'
 import CallSummary from './screens/CallSummary'
@@ -25,7 +28,10 @@ export default function App() {
           <Route path="/" element={<Start />} />
           <Route path="/invite" element={<Invite />} />
           <Route path="/program" element={<Program />} />
-          <Route path="/setup" element={<CallSetup />} />
+          <Route path="/setup" element={<RecordSetup />} />
+          <Route path="/checkin" element={<CheckIn />} />
+          <Route path="/sos" element={<Sos />} />
+          <Route path="/ask" element={<Ask />} />
           <Route path="/home" element={<Home />} />
           <Route path="/call" element={<LiveCall />} />
           <Route path="/summary" element={<CallSummary />} />

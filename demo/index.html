@@ -151,11 +151,16 @@ function show(text, dir) {
 }
 function diff(a, b) {
   if (b.patient?.callAt && b.patient.callAt !== a.patient?.callAt)
-    return show(b.patient.scenario === 'risk' ? 'AI 통화 결과 · 위험 신호' : 'AI 통화 결과', -1)
+    return show((b.patient.source === 'call' ? 'AI 전화 기록' : '앱 기록') + (b.patient.scenario === 'risk' ? ' · 위험 신호' : ''), -1)
+  if ((b.sosLog?.length || 0) > (a.sosLog?.length || 0)) return show('식욕 SOS 기록', -1)
   if (b.patient?.scenario && b.patient.scenario !== a.patient?.scenario) return show('환자 상태 바뀜', -1)
+  const qa = a.inquiries || [], qb = b.inquiries || []
+  if (qb.length > qa.length) return show(qb[qb.length - 1].kind === 'visit' ? '진료 때 물어볼 질문 → 차트' : '환자 문의 → 문의함', -1)
+  if (qb.some((q) => q.reply && !qa.find((x) => x.id === q.id)?.reply)) return show('원장님 답변', 1)
+  if (qb.some((q) => q.replySeenAt && !qa.find((x) => x.id === q.id)?.replySeenAt)) return show('환자가 답변 읽음', -1)
   if (b.visitRequest && b.visitRequest.at !== a.visitRequest?.at) return show('내원 요청 + 진료 가능 시간', 1)
   if (b.booking && b.booking.at !== a.booking?.at) return show('내원 예약 확정', -1)
-  if ((b.memos?.length || 0) > (a.memos?.length || 0)) return show('원장님 메모', 1)
+  if ((b.memos?.length || 0) > (a.memos?.length || 0)) return show('진료 기록 → 환자 앱', 1)
   if (b.memoSeenAt && b.memoSeenAt !== a.memoSeenAt) return show('환자가 메모 읽음', -1)
 }
 addEventListener('storage', (e) => {

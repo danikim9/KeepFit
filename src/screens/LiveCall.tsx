@@ -6,7 +6,7 @@ import { scenarios } from '../data/mock'
 import { useAppState } from '../state/AppState'
 import { snapshot, writeLink } from '../state/link'
 
-// Simulated call for the demo; the real call is placed by the voice agent.
+// Simulated call for the demo. The voice agent calls only when the patient misses app check-ins.
 export default function LiveCall() {
   const { scenario } = useAppState()
   const lines = scenarios[scenario].transcript
@@ -17,7 +17,7 @@ export default function LiveCall() {
 
   // Hang up: send what the call recorded to the clinic dashboard, then show the summary
   const finish = () => {
-    writeLink({ patient: snapshot(scenario, Date.now()) })
+    writeLink({ patient: snapshot(scenario, Date.now(), 'call') })
     navigate('/summary')
   }
 

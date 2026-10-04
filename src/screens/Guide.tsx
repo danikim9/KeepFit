@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Screen } from '../components/Layout'
 import { guides, reboundArticle } from '../data/guides'
-import { program, stages } from '../data/mock'
+import { checkups, program, stages } from '../data/mock'
 
 export default function Guide() {
   const focus = guides.filter((g) => g.focus)
@@ -40,6 +40,22 @@ export default function Guide() {
             </div>
           )
         })}
+      </section>
+
+      <div className="stack" style={{ gap: 4, marginTop: 4 }}>
+        <b style={{ fontSize: 15 }}>약을 끊은 뒤 점검 내원</b>
+        <span className="eyebrow">약을 끊어도 혼자가 아니에요. 원장님이 직접 확인해요</span>
+      </div>
+      <section className="card list" style={{ padding: '4px 16px' }}>
+        {checkups.map((c) => (
+          <div className="list__row" key={c.when}>
+            <span className="stack" style={{ gap: 0 }}>
+              <b style={{ color: 'var(--text)', fontSize: 14 }}>{c.when}</b>
+              <span className="small">{c.what}</span>
+            </span>
+            <span className="small">{c.date}</span>
+          </div>
+        ))}
       </section>
 
       <div className="stack" style={{ gap: 4, marginTop: 4 }}>

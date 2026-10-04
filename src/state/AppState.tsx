@@ -4,24 +4,24 @@ import { clearLink, readLink, snapshot, startHeartbeat, writeLink } from './link
 
 type State = {
   onboarded: boolean
-  frequency: string
-  callTime: string
-  textFallback: boolean
+  callTime: string // 기록 알림 시간 (AI 전화도 이 시간에)
+  callFallback: boolean // 앱 기록을 2일 놓치면 AI 코치가 전화로 대신 물어봄
   missionsDone: Record<string, boolean>
   scenario: Scenario
   bookedSlot: string | null
   guideChecks: Record<string, boolean> // key: `${guideId}:${actionIndex}`
+  lastEntry: { weight: number; appetite: number; sleep: number; stress: number; symptoms: string[]; at: number } | null // 오늘 앱 기록
 }
 
 const initial: State = {
   guideChecks: {},
   onboarded: false,
-  frequency: '매일',
   callTime: '저녁 9:00',
-  textFallback: true,
+  callFallback: true,
   missionsDone: { protein: true },
   scenario: 'normal',
   bookedSlot: null,
+  lastEntry: null,
 }
 
 const KEY = 'keepfit-state'
@@ -55,7 +55,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   // Keep the clinic dashboard's view of this patient current
   useEffect(() => {
-    writeLink({ patient: { ...snapshot(state.scenario), callAt: readLink().patient?.callAt ?? null } })
+    const prev = readLink().patient
+    writeLink({ patient: { ...snapshot(state.scenario, prev?.callAt ?? null, prev?.source ?? 'app') } })
   }, [state.scenario])
 
   useEffect(() => startHeartbeat(), [])
