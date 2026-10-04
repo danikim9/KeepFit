@@ -5,7 +5,7 @@ import { clearLink, readLink, snapshot, startHeartbeat, writeLink } from './link
 type State = {
   onboarded: boolean
   callTime: string // 기록 알림 시간 (AI 전화도 이 시간에)
-  callFallback: boolean // 앱 기록을 2일 놓치면 AI 코치가 전화로 대신 물어봄
+  aiCall: boolean // 정한 시간에 AI 코치가 전화로 체크인 (앱 30초 기록과 둘 다 가능)
   missionsDone: Record<string, boolean>
   scenario: Scenario
   bookedSlot: string | null
@@ -17,7 +17,7 @@ const initial: State = {
   guideChecks: {},
   onboarded: false,
   callTime: '저녁 9:00',
-  callFallback: true,
+  aiCall: true,
   missionsDone: { protein: true },
   scenario: 'normal',
   bookedSlot: null,

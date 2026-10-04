@@ -419,7 +419,7 @@ function vClinic(){
    <form class="row" data-form="free" style="flex-wrap:nowrap"><input class="inp" name="free" placeholder="직접 입력 (예: 다음 진료 때 혈액검사)" value="${esc(S.free)}" autocomplete="off"><button class="btn sm">추가</button></form>
    <label class="row s13" style="gap:8px;cursor:pointer"><input type="checkbox" data-send ${S.sendApp?'checked':''}> 답변·조언·다음 예약은 환자 앱에도 보내기 ${appLines.length&&S.sendApp?`<span class="faint">(${appLines.length}줄)</span>`:''}</label>
    <button class="btn primary" data-act="save" ${S.draft.length?'':'disabled'}>차트에 저장${S.sendApp&&appLines.length?' · 환자 앱 전송':''}</button></div>
-   ${p.id==='jieun'?`<div class="between s13"><span class="faint">앱 기록을 놓치면 AI 코치가 대신 전화해요</span><button class="link" data-act="call-now">지금 AI 전화 걸기</button></div>`:''}
+   ${p.id==='jieun'?`<div class="between s13"><span class="faint">AI 코치 전화 · 오늘 저녁 9:00</span><button class="link" data-act="call-now">지금 AI 전화 걸기</button></div>`:''}
    <div class="actions"><button class="btn wide ${p.st!=='ok'||p.ck?'primary':''}" data-act="vsheet" ${S.visit[p.id]?'disabled':''}>${S.booked[p.id]?'예약 확정 · '+slot1(S.booked[p.id]):S.visit[p.id]?'내원 요청 보냄 · 선택 대기':p.ck?'점검 내원 요청':'내원 앞당기기 요청'}</button></div>`;
  }
  return `
@@ -537,7 +537,7 @@ function vSettings(){const c=S.cfg,k=S.setCat;return `
     <p class="faint small">${PHRASES[k].app?'이 분류는 환자 앱에도 보낼 수 있어요':'처방은 차트에만 남고 환자 앱에는 가지 않아요'}</p></div>
    <div class="card"><h2>환자 앱 기록 항목</h2>
     <div class="set">${[['weight','체중','아침 공복 · 진료 날엔 병원 측정 대신'],['appetite','식욕 (1–10)','매일'],['stress','스트레스 (1–10)','매일'],['sleep','수면 시간','매일'],['symptoms','불편한 증상','메스꺼움·변비·속쓰림·어지러움·피로']].map(([id,l,d])=>`<div><div><b>${l}</b><span class="d">${d}</span></div>${tog('rec:'+id,c.rec[id],l)}</div>`).join('')}
-     <div><div><b>앱 기록을 2일 놓치면 AI 전화로 대신 묻기</b><span class="d">놓친 환자에게만 걸어요</span></div>${tog('callFallback',c.callFallback,'AI 전화 대체')}</div></div></div>
+     <div><div><b>AI 코치 전화 체크인</b><span class="d">환자가 고른 시간에 음성으로 물어봐요 · 통화가 어려우면 눌러서 답하기 · 앱 30초 기록도 가능</span></div>${tog('callFallback',c.callFallback,'AI 코치 전화')}</div></div></div>
    <div class="card"><h2>차트에 "확인할 것"으로 올리는 기준</h2>
     <div class="set">
      <div><div><b>체중이 유지 범위를 벗어나면</b><span class="d">목표 체중 ±2kg</span></div>${tog('weight',c.weight,'체중')}</div>

@@ -8,7 +8,7 @@ import { snapshot, writeLink } from '../state/link'
 
 const APPETITE_ALERT = 8
 
-// 하루 30초 앱 기록 → 원장님 대시보드의 환자 차트에 자동 입력 (진료 때 문진·체중 측정 시간 단축)
+// 하루 30초 앱 기록 (AI 코치 전화 대신 직접 기록) → 원장님 대시보드의 환자 차트에 자동 입력
 export default function CheckIn() {
   const { scenario, lastEntry, update } = useAppState()
   const data = scenarios[scenario]
@@ -179,7 +179,7 @@ export default function CheckIn() {
           {appetite == null ? '식욕을 골라 주세요' : stress == null ? '스트레스를 골라 주세요' : '기록하고 원장님 차트에 보내기'}
         </button>
         <Link to="/call" className="link-btn" style={{ textAlign: 'center' }}>
-          AI 코치 전화로 대신 기록하기
+          AI 코치 전화로 답하기
         </Link>
       </div>
     </Screen>

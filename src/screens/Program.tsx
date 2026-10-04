@@ -5,7 +5,7 @@ import { checkups, patient, program, stages } from '../data/mock'
 
 const features: { icon: IconName; title: string; detail: string; warn?: boolean }[] = [
   { icon: 'utensils', title: '식욕 SOS', detail: '먹고 싶을 때 누르면 10분 같이 버텨요' },
-  { icon: 'scale', title: '30초 기록', detail: '체중·식욕·스트레스·수면이 원장님 차트에 자동 입력' },
+  { icon: 'phone', title: 'AI 코치 전화 체크인', detail: '정한 시간에 2분 통화 · 어려우면 눌러서 답하기 · 원장님 차트에 자동 입력' },
   { icon: 'book', title: '원장님께 질문 남기기', detail: '진료 사이 궁금한 점, 다음 진료 때 물어볼 것' },
   { icon: 'bell', title: '위험 시 내원 요청', detail: '반등 신호가 보이면 원장님이 먼저 연락해요', warn: true },
   { icon: 'list', title: '단약 후 점검 내원', detail: `약을 끊은 뒤에도 ${checkups.length}번, 원장님이 직접 확인` },

@@ -6,7 +6,7 @@ import { useAppState } from '../state/AppState'
 import { timeAgo, useLink, writeLink } from '../state/link'
 
 export default function Home() {
-  const { scenario, callTime, callFallback, missionsDone, bookedSlot, lastEntry, update, reset } = useAppState()
+  const { scenario, callTime, aiCall, missionsDone, bookedSlot, lastEntry, update, reset } = useAppState()
   const link = useLink()
   const data = scenarios[scenario]
   // 방금 AI 코치 체크인(통화·버튼)으로 기록된 값이 있으면 그걸 보여줘요
@@ -128,15 +128,36 @@ export default function Home() {
         </span>
       </section>
 
-      <section className="card card--dark">
-        <div className="badge-icon" style={{ width: 44, height: 44, borderRadius: 22, background: recordedToday ? '#3a3a3a' : 'var(--accent)', color: '#fff' }}>
+      {aiCall && (
+        <>
+          <section className="card card--dark">
+            <div className="badge-icon" style={{ width: 44, height: 44, borderRadius: 22, background: lp ? '#3a3a3a' : 'var(--accent)', color: '#fff' }}>
+              <Icon name={lp ? 'check' : 'phone'} size={20} />
+            </div>
+            <div className="stack spacer" style={{ gap: 2 }}>
+              <span style={{ fontSize: 12, color: '#c9c9c4' }}>{lp ? '오늘 AI 코치 체크인 완료 · 원장님 차트에 들어감' : '다음 AI 코치 전화'}</span>
+              <b style={{ fontSize: 16 }}>{lp ? '내일도 전화드릴게요' : `오늘 ${callTime}`}</b>
+            </div>
+            <Link to="/call" className="btn btn--small">
+              {lp ? '다시 받기' : '지금 받기'}
+            </Link>
+          </section>
+          <Link to="/call/tap" className="link-row" style={{ minHeight: 44, marginTop: -8 }}>
+            <span>통화가 어려우면 소리 없이 눌러서 답하기 · 20초</span>
+            <Icon name="forward" size={16} />
+          </Link>
+        </>
+      )}
+
+      <section className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+        <div className="badge-icon" style={{ width: 44, height: 44, borderRadius: 22 }}>
           <Icon name={recordedToday ? 'check' : 'scale'} size={20} />
         </div>
         <div className="stack spacer" style={{ gap: 2 }}>
-          <span style={{ fontSize: 12, color: '#c9c9c4' }}>{recordedToday ? '오늘 기록 완료 · 원장님께 전달됨' : `오늘 기록 · 알림 ${callTime}`}</span>
-          <b style={{ fontSize: 16 }}>{recordedToday ? '내일도 30초면 돼요' : '체중·식욕·수면 30초'}</b>
+          <span className="small">{recordedToday ? '오늘 앱 기록 완료 · 원장님 차트에 들어감' : aiCall ? '전화 대신 직접 기록하기' : `오늘 기록 · 알림 ${callTime}`}</span>
+          <b style={{ fontSize: 15 }}>체중·식욕·스트레스·수면 30초</b>
         </div>
-        <Link to="/checkin" className="btn btn--small">
+        <Link to="/checkin" className="btn btn--small btn--outline">
           {recordedToday ? '수정' : '기록하기'}
         </Link>
       </section>
@@ -153,11 +174,6 @@ export default function Home() {
         <Icon name="forward" size={18} />
       </Link>
 
-      {callFallback && (
-        <Link to="/call" className="small" style={{ textAlign: 'center', marginTop: -4 }}>
-          기록을 2일 놓치면 AI 코치가 전화해요 · 지금 전화로 기록하기
-        </Link>
-      )}
 
       <section className="card">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>

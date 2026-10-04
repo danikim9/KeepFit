@@ -39,7 +39,7 @@ export const missions = [
   { id: 'sleep', label: '밤 12시 전 잠들기' },
 ]
 
-export const recordItems = ['오늘 체중', '식욕 (1–10)', '스트레스 (1–10)', '수면 · 불편한 증상']
+export const recordItems = ['오늘 체중', '식욕 (1–10)', '수면 시간', '원장님께 전할 말']
 
 // 기록하면 원장님 차트에 자동으로 들어가서, 진료 때 문진과 체중 재는 시간이 줄어요
 export const symptomOptions = ['없음', '메스꺼움', '변비', '속쓰림', '어지러움', '피로'] as const
