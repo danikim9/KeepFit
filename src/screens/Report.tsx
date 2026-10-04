@@ -62,6 +62,9 @@ export default function Report() {
   const labels = range === 'weekly' ? ['월', '화', '수', '목', '금', '토', '일'] : ['1주', '2주', '3주', '4주']
   const delta = series.weight[series.weight.length - 1] - series.weight[0]
   const appetiteMax = Math.max(...series.appetite)
+  const sosLog = useLink().sosLog ?? []
+  const sosCount = data.sos.count + sosLog.length
+  const sosResisted = data.sos.resisted + sosLog.filter((e) => e.outcome !== 'ate').length
 
   return (
     <Screen tabs>
@@ -103,9 +106,40 @@ export default function Report() {
         <AppetiteBars values={series.appetite} labels={labels} />
       </section>
 
+      <section className="card">
+        <div className="section-title">
+          <span>스트레스</span>
+          <span className="eyebrow" style={{ fontWeight: 400 }}>
+            평균 {(series.stress.reduce((x, y) => x + y, 0) / series.stress.length).toFixed(1)}
+          </span>
+        </div>
+        <AppetiteBars values={series.stress} labels={labels} />
+      </section>
+
+      <section className="card">
+        <div className="section-title">
+          <span>식욕 SOS</span>
+          <span className="eyebrow" style={{ fontWeight: 400 }}>
+            이번 주
+          </span>
+        </div>
+        <div className="row" style={{ alignItems: 'baseline', gap: 6 }}>
+          <b style={{ fontSize: 24 }}>
+            {sosResisted}
+            <small style={{ fontSize: 14, color: 'var(--sub)', fontWeight: 500 }}> / {sosCount}번 넘김</small>
+          </b>
+        </div>
+        <div className="progress">
+          <div style={{ width: `${sosCount ? (sosResisted / sosCount) * 100 : 0}%` }} />
+        </div>
+        <span className="small">
+          자주 오는 시간 {data.sos.peak} · 이 시간 전에 단백질 간식을 챙겨 둬요
+        </span>
+      </section>
+
       <div className="tiles">
         <div className="tile">
-          <span className="tile__label">통화 응답</span>
+          <span className="tile__label">기록</span>
           <span className="tile__value">{data.stats.answered}</span>
         </div>
         <div className="tile">

@@ -407,3 +407,40 @@ button.os__app { cursor: pointer; }
 .call.has-panel .call__end { width: 52px; height: 52px; margin-top: 4px; }
 .call .ap { flex-shrink: 0; }
 .call__avatar, .call__end, .call > b, .call__meta, .call__mode { flex-shrink: 0; }
+
+/* 30초 기록 */
+.stepper { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.stepper button {
+  width: 48px; height: 48px; border-radius: 24px; border: 1px solid var(--line); background: var(--surface);
+  font-size: 22px; line-height: 1; cursor: pointer; flex: none;
+}
+.stepper b { font-size: 30px; font-variant-numeric: tabular-nums; }
+.stepper b small { font-size: 14px; font-weight: 500; color: var(--sub); margin-left: 2px; }
+.scale10 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.scale10 .chip { padding: 0; border-radius: 12px; font-variant-numeric: tabular-nums; }
+.scale10 .chip.is-high[aria-pressed='true'] { border-color: var(--warn); background: var(--warn-soft); color: var(--warn-strong); }
+.scale-ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); }
+
+/* 식욕 SOS */
+.sos-card { flex-direction: row; align-items: center; gap: 14px; text-decoration: none; color: var(--text); border: 1.5px solid var(--warn-line); background: var(--warn-soft); }
+.sos-card .badge-icon { width: 44px; height: 44px; border-radius: 22px; background: var(--warn); color: #fff; }
+.breath { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 12px 0 4px; }
+.breath__ring {
+  width: 180px; height: 180px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--accent-soft); box-shadow: 0 0 0 0 var(--accent-soft); animation: breathe 8s ease-in-out infinite;
+}
+.breath__ring b { font-size: 40px; font-variant-numeric: tabular-nums; color: var(--accent-strong); }
+.breath__ring span { font-size: 13px; color: var(--accent-strong); }
+@keyframes breathe { 0%, 100% { transform: scale(0.88); } 50% { transform: scale(1); box-shadow: 0 0 0 18px rgba(47, 91, 211, 0.08); } }
+@media (prefers-reduced-motion: reduce) { .breath__ring { animation: none; } }
+.footer .link-btn { display: flex; align-items: center; justify-content: center; }
+
+/* 원장님께 남기기 */
+.textarea {
+  width: 100%; min-height: 104px; resize: vertical; border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 14px; background: var(--surface); font: inherit; font-size: 15px; line-height: 1.5;
+}
+.textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.chips--sm .chip { min-height: 36px; padding: 0 12px; font-size: 13px; }
+.reply { background: var(--accent-soft); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.5; }
+.reply b { font-size: 12px; color: var(--accent-strong); }

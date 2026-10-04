@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KeepFit 연동 시연</title>
+<meta name="description" content="병원 대시보드와 환자 앱을 한 화면에 띄워 실시간 연동을 시연하는 페이지">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Demo shell: clinic dashboard (left) + patient app in a phone frame (right), same origin so the
+   two iframes share the keepfit-link localStorage record and sync through `storage` events. */
+:root{
+  --ground:#E9E9E6;--surface:#FFFFFF;--ink:#1A1A1A;--muted:#5C5C58;--faint:#9A9A95;--div:#D6D6D2;
+  --accent:#2F5BD3;--accent-tint:#E9EEFB;--on-accent:#FFFFFF;--phone:#1A1A1A;
+  --font:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#0B0B0A;--surface:#1C1C1A;--ink:#EDEDEA;--muted:#A9A9A3;--faint:#7A7A73;--div:#2B2B28;
+  --accent:#6F8FF0;--accent-tint:#1E2846;--on-accent:#0E1430;--phone:#000;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0B0B0A;--surface:#1C1C1A;--ink:#EDEDEA;--muted:#A9A9A3;--faint:#7A7A73;--div:#2B2B28;
+  --accent:#6F8FF0;--accent-tint:#1E2846;--on-accent:#0E1430;--phone:#000;color-scheme:dark}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{background:var(--ground);color:var(--ink);font-family:var(--font);display:flex;flex-direction:column;overflow:hidden}
+
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--div);background:var(--surface);flex:none;flex-wrap:wrap}
+header h1{font-size:15px;font-weight:700;letter-spacing:-.01em}
+header .sub{font-size:12px;color:var(--muted)}
+.spacer{flex:1}
+.btn{font:600 12px var(--font);color:var(--ink);background:none;border:1px solid var(--div);border-radius:10px;padding:7px 11px;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{color:var(--on-accent);opacity:.9}
+
+.stage{flex:1;min-height:0;display:flex;gap:0;padding:14px 16px 16px}
+.pane{display:flex;flex-direction:column;min-width:0;min-height:0}
+.pane.clinic{flex:1}
+.label{font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;height:18px}
+.label b{color:var(--ink)}
+.viewport{flex:1;min-height:0;position:relative;overflow:hidden}
+.clinic .viewport{border:1px solid var(--div);border-radius:12px;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.clinic iframe{position:absolute;top:0;left:0;border:0;transform-origin:0 0}
+
+/* bridge between the two panes: shows what just crossed over */
+.bridge{width:120px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding-top:26px}
+.wire{width:2px;flex:1;max-height:120px;background:repeating-linear-gradient(var(--div) 0 6px,transparent 6px 12px)}
+.event{font-size:11px;line-height:1.4;text-align:center;color:var(--faint);min-height:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0 4px}
+.event .arrow{font-size:20px;line-height:1;color:var(--faint)}
+.event.flash{color:var(--accent);font-weight:600}
+.event.flash .arrow{color:var(--accent);animation:nudge .6s ease-in-out 3}
+.event.toPatient .arrow{--dir:1}.event.toClinic .arrow{--dir:-1}
+@keyframes nudge{50%{transform:translateX(calc(var(--dir,1)*8px))}}
+
+.pane.patient{flex:none;align-items:center}
+.phone{position:absolute;top:0;left:50%;transform-origin:50% 0;background:var(--phone);border-radius:52px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.phone .screen{width:390px;height:844px;border-radius:40px;overflow:hidden;background:#F4F4F2;position:relative}
+.phone iframe{width:100%;height:100%;border:0;display:block}
+
+/* narrow screens: stack, dashboard first */
+@media (max-width:900px){
+  body{overflow:auto}
+  .stage{flex-direction:column;gap:16px;flex:none}
+  .pane.clinic .viewport{height:70vh;flex:none}
+  .bridge{width:auto;flex-direction:row;padding:0;min-height:0}
+  .wire{display:none}
+  .event.toPatient .arrow,.event.toClinic .arrow{transform:rotate(90deg)}
+  .pane.patient .viewport{flex:none}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>KeepFit 연동 시연</h1>
+  <span class="sub">왼쪽 원장님 대시보드 · 오른쪽 환자 앱 — 한쪽에서 하면 다른 쪽에 바로 떠요</span>
+  <span class="spacer"></span>
+  <button class="btn" id="startHome" title="온보딩을 건너뛰고 환자 앱 홈에서 시작">홈에서 시작</button>
+  <button class="btn" id="startOnboarding" title="환자 앱을 초대 화면부터 다시 시작">처음부터 (온보딩)</button>
+  <a class="btn" href="../clinic-dashboard/" target="_blank" rel="noopener">대시보드만 열기</a>
+  <a class="btn" href="../app/" target="_blank" rel="noopener">환자 앱만 열기</a>
+</header>
+
+<div class="stage">
+  <section class="pane clinic">
+    <div class="label"><b>병원 대시보드</b> · 원장님 화면</div>
+    <div class="viewport" id="clinicVp">
+      <iframe id="clinic" src="../clinic-dashboard/" title="병원 대시보드"></iframe>
+    </div>
+  </section>
+
+  <div class="bridge" aria-live="polite">
+    <div class="wire"></div>
+    <div class="event" id="event"><span class="arrow">⇄</span><span id="eventText">실시간 연동</span></div>
+    <div class="wire"></div>
+  </div>
+
+  <section class="pane patient" id="patientPane">
+    <div class="label"><b>환자 앱</b> · 이지은</div>
+    <div class="viewport" id="patientVp">
+      <div class="phone" id="phone"><div class="screen"><iframe id="patient" src="../app/#/" title="환자 앱"></iframe></div></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const CLINIC_W = 1280            // dashboard is laid out for a desktop width, scaled down to fit
+const PHONE_W = 390 + 24, PHONE_H = 844 + 24
+const LINK_KEY = 'keepfit-link', STATE_KEY = 'keepfit-state'
+const $ = (id) => document.getElementById(id)
+
+function layout() {
+  const narrow = matchMedia('(max-width:900px)').matches
+  const stage = document.querySelector('.stage')
+  // phone: fit the available height (or width when stacked)
+  const pvp = $('patientVp')
+  let ps
+  if (narrow) {
+    ps = Math.min(1, (stage.clientWidth - 32) / PHONE_W)
+    pvp.style.height = PHONE_H * ps + 'px'
+  } else {
+    pvp.style.height = ''
+    ps = Math.min(1, pvp.clientHeight / PHONE_H)
+  }
+  $('phone').style.transform = `translateX(-50%) scale(${ps})`
+  pvp.style.width = PHONE_W * ps + 'px'
+  $('patientPane').style.width = narrow ? '' : Math.max(PHONE_W * ps, 160) + 'px'
+
+  // dashboard: render at CLINIC_W and scale to the pane width
+  const cvp = $('clinicVp'), f = $('clinic')
+  const cs = Math.min(1, cvp.clientWidth / CLINIC_W)
+  f.style.width = cvp.clientWidth / cs + 'px'
+  f.style.height = cvp.clientHeight / cs + 'px'
+  f.style.transform = `scale(${cs})`
+}
+addEventListener('resize', layout)
+layout()
+requestAnimationFrame(layout)
+
+// --- show what just crossed between the two screens --------------------------------------
+function read() { try { return JSON.parse(localStorage.getItem(LINK_KEY) || '{}') } catch { return {} } }
+let prev = read(), flashT, quietUntil = 0  // ignore the writes a restart itself causes
+function show(text, dir) {
+  const el = $('event')
+  el.className = 'event flash ' + (dir > 0 ? 'toPatient' : 'toClinic')
+  el.querySelector('.arrow').textContent = dir > 0 ? '→' : '←'
+  $('eventText').textContent = text
+  clearTimeout(flashT)
+  flashT = setTimeout(() => { el.className = 'event'; el.querySelector('.arrow').textContent = '⇄'; $('eventText').textContent = '실시간 연동' }, 6000)
+}
+function diff(a, b) {
+  if (b.patient?.callAt && b.patient.callAt !== a.patient?.callAt)
+    return show((b.patient.source === 'call' ? 'AI 전화 기록' : '앱 기록') + (b.patient.scenario === 'risk' ? ' · 위험 신호' : ''), -1)
+  if ((b.sosLog?.length || 0) > (a.sosLog?.length || 0)) return show('식욕 SOS 기록', -1)
+  if (b.patient?.scenario && b.patient.scenario !== a.patient?.scenario) return show('환자 상태 바뀜', -1)
+  const qa = a.inquiries || [], qb = b.inquiries || []
+  if (qb.length > qa.length) return show(qb[qb.length - 1].kind === 'visit' ? '진료 때 물어볼 질문 → 차트' : '환자 문의 → 문의함', -1)
+  if (qb.some((q) => q.reply && !qa.find((x) => x.id === q.id)?.reply)) return show('원장님 답변', 1)
+  if (qb.some((q) => q.replySeenAt && !qa.find((x) => x.id === q.id)?.replySeenAt)) return show('환자가 답변 읽음', -1)
+  if (b.visitRequest && b.visitRequest.at !== a.visitRequest?.at) return show('내원 요청 + 진료 가능 시간', 1)
+  if (b.booking && b.booking.at !== a.booking?.at) return show('내원 예약 확정', -1)
+  if ((b.memos?.length || 0) > (a.memos?.length || 0)) return show('진료 기록 → 환자 앱', 1)
+  if (b.memoSeenAt && b.memoSeenAt !== a.memoSeenAt) return show('환자가 메모 읽음', -1)
+}
+addEventListener('storage', (e) => {
+  if (e.key !== LINK_KEY && e.key !== null) return
+  const next = read(); if (Date.now() > quietUntil) diff(prev, next); prev = next
+})
+
+// --- demo controls -----------------------------------------------------------------------
+function restart(onboarded) {
+  try {
+    localStorage.removeItem(LINK_KEY)
+    if (onboarded) {
+      const s = JSON.parse(localStorage.getItem(STATE_KEY) || '{}')
+      localStorage.setItem(STATE_KEY, JSON.stringify({ ...s, onboarded: true, scenario: 'normal', bookedSlot: null, missionsDone: { protein: true } }))
+    } else {
+      localStorage.removeItem(STATE_KEY)
+    }
+  } catch { /* storage blocked: iframes just reload */ }
+  prev = {}; quietUntil = Date.now() + 2000
+  $('event').className = 'event'; $('event').querySelector('.arrow').textContent = '⇄'; $('eventText').textContent = '실시간 연동'
+  $('patient').src = '../app/?t=' + Date.now() + '#/' + (onboarded ? 'home' : 'invite')
+  // let the patient app write its fresh snapshot before the dashboard reads it
+  setTimeout(() => { $('clinic').src = '../clinic-dashboard/?t=' + Date.now(); prev = read() }, 600)
+}
+$('startHome').onclick = () => restart(true)
+$('startOnboarding').onclick = () => restart(false)
+</script>
+</body>
+</html>

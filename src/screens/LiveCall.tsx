@@ -35,7 +35,7 @@ export default function LiveCall() {
   const nav = (location.state as { ring?: boolean; silent?: boolean } | null) ?? {}
   const ringing = nav.ring === true
   // 소리 없이 누르기: 말 대신 화면에서 답해요 (지하철·회의 중 등 통화가 어려울 때)
-  const [silent, setSilent] = useState(nav.silent === true || location.pathname === '/checkin')
+  const [silent, setSilent] = useState(nav.silent === true || location.pathname === '/call/tap')
   const silentRef = useRef(silent)
   const usedVoice = useRef(false)
   const [qn, setQn] = useState(0)
@@ -305,7 +305,7 @@ export function IncomingCall() {
   useEffect(() => {
     const check = () => {
       const req = readLink().callRequest
-      if (!req || ['/call', '/os', '/checkin'].includes(location.pathname)) return
+      if (!req || ['/call', '/call/tap', '/os', '/checkin'].includes(location.pathname)) return
       let handled = 0
       try {
         handled = Number(sessionStorage.getItem('keepfit-call-handled') || 0)

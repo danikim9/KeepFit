@@ -1,19 +1,810 @@
 <!doctype html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#F4F4F2" />
-    <meta name="description" content="GLP-1 감량 치료 후 체중 유지 프로그램 — 환자용 앱" />
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="./icon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <title>KeepFit</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KeepFit · 약은 끊어도, 체중은 지키도록</title>
+<meta name="description" content="위고비·마운자로를 줄이거나 끊은 뒤 다시 찌지 않도록. 매일 2분 AI 코치 전화로 식욕·체중·수면을 챙겨요. 월 9,900원, 첫 2주 무료.">
+<meta property="og:title" content="KeepFit · 약은 끊어도, 체중은 지키도록">
+<meta property="og:description" content="GLP-1 감량 이후 체중 유지, 매일 2분 AI 코치 전화로. 월 9,900원, 첫 2주 무료.">
+<meta name="theme-color" content="#F4F4F2">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Tokens follow the patient app (src/styles.css). */
+:root{
+  --ground:#F4F4F2;--surface:#FFFFFF;--ink:#1A1A1A;--muted:#5C5C58;--faint:#9A9A95;--line:#D6D6D2;--div:#E6E6E2;
+  --accent:#2F5BD3;--accent-dark:#1E3F9E;--accent-tint:#E9EEFB;--on-accent:#FFFFFF;
+  --warn:#B4500B;--warn-tint:#FDF1E7;--danger:#B42318;--neutral-tint:#EDEDEA;--bar:#C9C9C4;
+  --phone:#1A1A1A;--scrim:rgba(20,20,18,.5);
+  --font:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ground:#121211;--surface:#1C1C1A;--ink:#EDEDEA;--muted:#A9A9A3;--faint:#7A7A73;--line:#3A3A36;--div:#2B2B28;
+  --accent:#6F8FF0;--accent-dark:#AFC0F7;--accent-tint:#1E2846;--on-accent:#0E1430;
+  --warn:#EE9F68;--warn-tint:#33231A;--danger:#F2867B;--neutral-tint:#2A2A27;--bar:#55554F;
+  --phone:#000;--scrim:rgba(0,0,0,.65);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#121211;--surface:#1C1C1A;--ink:#EDEDEA;--muted:#A9A9A3;--faint:#7A7A73;--line:#3A3A36;--div:#2B2B28;
+  --accent:#6F8FF0;--accent-dark:#AFC0F7;--accent-tint:#1E2846;--on-accent:#0E1430;
+  --warn:#EE9F68;--warn-tint:#33231A;--danger:#F2867B;--neutral-tint:#2A2A27;--bar:#55554F;
+  --phone:#000;--scrim:rgba(0,0,0,.65);color-scheme:dark}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--ground);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;line-height:1.6;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+section{padding:96px 0}
+section.alt{background:var(--surface);border-top:1px solid var(--div);border-bottom:1px solid var(--div)}
+.eyebrow{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.02em;margin-bottom:12px}
+h2{font-size:clamp(26px,3.4vw,38px);line-height:1.3;letter-spacing:-.02em;font-weight:700;max-width:760px}
+.lead{font-size:17px;color:var(--muted);max-width:620px;margin-top:14px}
+.card{background:var(--surface);border:1px solid var(--div);border-radius:20px;padding:24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 15px var(--font);border-radius:12px;padding:13px 20px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;transition:border-color .15s,color .15s,opacity .15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{opacity:.9;color:var(--on-accent)}
+.btn.big{font-size:16px;padding:16px 24px;border-radius:14px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,a:focus-visible,.opt:focus-within{outline:2px solid var(--accent);outline-offset:3px}
+
+/* nav */
+nav{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--ground) 86%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--div)}
+nav .wrap{display:flex;align-items:center;gap:24px;height:60px}
+.logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;letter-spacing:-.01em}
+.logo img{width:26px;height:26px}
+nav .links{display:flex;gap:22px;font-size:14px;color:var(--muted);margin-left:auto}
+nav .links a:hover{color:var(--ink)}
+nav .btn{padding:8px 14px;font-size:13px}
+
+/* hero */
+.hero{padding:72px 0 88px}
+.hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--accent-dark);background:var(--accent-tint);border-radius:999px;padding:6px 12px;margin-bottom:22px}
+.pill .dot{width:6px;height:6px;border-radius:3px;background:var(--accent)}
+.hero h1{font-size:clamp(36px,5.2vw,56px);line-height:1.2;letter-spacing:-.03em;font-weight:700}
+.hero h1 em{font-style:normal;color:var(--accent)}
+.hero .lead{font-size:18px;margin-top:20px}
+.hero .ctas{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:32px}
+.price-note{font-size:14px;color:var(--muted)}
+.price-note b{color:var(--ink)}
+
+.visual{position:relative;height:560px}
+.phone{position:absolute;right:0;top:0;width:280px;height:560px;background:var(--phone);border-radius:42px;padding:10px;box-shadow:0 24px 60px rgba(0,0,0,.18)}
+.screen{width:100%;height:100%;border-radius:33px;background:#F4F4F2;color:#1A1A1A;overflow:hidden;display:flex;flex-direction:column;padding:34px 16px 16px;gap:10px}
+.call-head{text-align:center}
+.call-head .avatar{width:52px;height:52px;border-radius:26px;background:#2F5BD3;margin:0 auto 8px;display:grid;place-items:center}
+.call-head b{display:block;font-size:15px}
+.call-head span{font-size:12px;color:#5C5C58}
+.bub{max-width:82%;font-size:12.5px;line-height:1.45;padding:9px 11px;border-radius:14px}
+.bub.ai{background:#fff;border:1px solid #E6E6E2;border-top-left-radius:4px}
+.bub.me{background:#2F5BD3;color:#fff;align-self:flex-end;border-top-right-radius:4px}
+.rec{margin-top:auto;background:#fff;border:1px solid #E6E6E2;border-radius:14px;padding:10px 12px}
+.rec small{font-size:11px;color:#9A9A95;font-weight:600}
+.rec .vals{display:flex;justify-content:space-between;margin-top:4px;font-size:12px;color:#5C5C58}
+.rec .vals b{display:block;font-size:16px;color:#1A1A1A}
+.report{position:absolute;left:-40px;bottom:90px;width:200px;background:var(--surface);border:1px solid var(--div);border-radius:18px;padding:16px;box-shadow:0 18px 44px rgba(0,0,0,.12)}
+.report .top{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:600;color:var(--muted)}
+.ok{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;border-radius:999px;padding:3px 8px;color:var(--accent-dark);background:var(--accent-tint)}
+.report b.big{display:block;font-size:24px;letter-spacing:-.02em;margin-top:8px}
+.report small{font-size:12px;color:var(--muted)}
+.band{position:relative;height:46px;margin-top:12px}
+.band::before{content:"";position:absolute;left:0;right:0;top:12px;height:20px;background:var(--accent-tint);border-radius:6px}
+.band svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+
+/* problem */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+.stat .num{font-size:clamp(40px,5vw,56px);font-weight:700;letter-spacing:-.03em;line-height:1.1;color:var(--accent)}
+.stat p{font-size:16px;font-weight:600;margin-top:10px}
+.stat small{display:block;font-size:12px;color:var(--faint);margin-top:6px}
+.pains{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px}
+.pains .card{padding:20px}
+.pains b{font-size:15px}
+.pains p{font-size:14px;color:var(--muted);margin-top:4px}
+
+/* how: step list + phone playing the real app screens */
+.tour{display:grid;grid-template-columns:1fr 300px;gap:64px;align-items:center;margin-top:40px}
+.steps{display:flex;flex-direction:column;gap:8px}
+.step{display:grid;grid-template-columns:36px 1fr;gap:4px 14px;text-align:left;width:100%;border:1px solid transparent;background:none;border-radius:16px;padding:18px 18px 16px;cursor:pointer;color:var(--ink);transition:background .2s,border-color .2s}
+.step:hover{background:var(--ground)}
+.step .n{grid-row:span 3;width:32px;height:32px;border-radius:16px;background:var(--neutral-tint);color:var(--muted);font-weight:700;font-size:14px;display:grid;place-items:center;transition:background .2s,color .2s}
+.step b{font-size:17px}
+.step p{font-size:14px;color:var(--muted)}
+.step .bar{height:3px;border-radius:2px;background:var(--div);overflow:hidden;margin-top:10px;visibility:hidden}
+.step .bar i{display:block;height:100%;width:100%;background:var(--accent);transform-origin:0 50%;transform:scaleX(0)}
+.step[aria-current="true"]{background:var(--ground);border-color:var(--div)}
+.step[aria-current="true"] .n{background:var(--accent);color:var(--on-accent)}
+.step[aria-current="true"] .bar{visibility:visible}
+.tour.auto .step[aria-current="true"] .bar i{animation:fill var(--dur) linear forwards}
+.tour.paused *,.tour.paused *::after{animation-play-state:paused!important}
+@keyframes fill{to{transform:scaleX(1)}}
+.disclaim{margin-top:24px;font-size:13px;color:var(--muted)}
+
+.device{width:300px;height:620px;background:var(--phone);border-radius:46px;padding:10px;box-shadow:0 24px 60px rgba(0,0,0,.18);justify-self:center}
+.vp{position:relative;width:280px;height:600px;border-radius:36px;overflow:hidden;background:#F4F4F2}
+.scr{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s}
+.scr.on{opacity:1;visibility:visible}
+
+/* app UI replica (always the app's light theme), laid out at 350x750 and scaled to fit */
+.ui{--bg:#f4f4f2;--surface:#fff;--line:#d6d6d2;--line-soft:#e6e6e2;--muted-fill:#c9c9c4;--text:#1a1a1a;--sub:#5c5c58;--accent:#2f5bd3;--accent-strong:#1e3f9e;--accent-soft:#e9eefb;--warn:#b4500b;--warn-strong:#8a3d08;--warn-soft:#fdf1e7;--warn-line:#f2c9a6;--warn-bar:#e59a62;
+  width:350px;height:750px;transform:scale(.8);transform-origin:0 0;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;
+  padding:48px 20px 24px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden}
+.ui.dark{background:#121212;color:#fff}
+.ui .h1{font-size:24px;line-height:1.35;font-weight:700}
+.ui .lead{font-size:14px;color:var(--sub)}
+.ui .lbl{font-size:13px;font-weight:600}
+.ui .small{font-size:12px;color:var(--sub)}
+.ui .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.ui .seg{display:grid;gap:6px;background:var(--line-soft);padding:4px;border-radius:12px}
+.ui .seg span{height:40px;border-radius:9px;display:grid;place-items:center;color:var(--sub)}
+.ui .seg .on{background:var(--surface);color:var(--text);font-weight:600}
+.ui .chips{display:flex;flex-wrap:wrap;gap:8px}
+.ui .chip{min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:22px;background:var(--surface);display:inline-flex;align-items:center;position:relative}
+.ui .qg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ui .qg span{padding:10px 12px;background:var(--bg);border-radius:10px}
+.ui .toggle{display:flex;justify-content:space-between;align-items:center}
+.ui .sw{width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;color:#fff;font-size:14px;font-weight:700}
+.ui .cta{height:56px;border-radius:14px;background:var(--accent);color:#fff;font-size:16px;font-weight:600;display:grid;place-items:center;margin-top:auto;position:relative}
+.ui .toast{position:absolute;left:20px;right:20px;bottom:96px;background:#1a1a1a;color:#fff;border-radius:12px;padding:12px 14px;font-size:14px;text-align:center}
+.ui .head{display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.ui .head b{font-size:20px}
+.ui .days{display:flex;justify-content:space-between;font-size:11px;color:var(--sub)}
+.ui .sec{font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:baseline}
+.ui .bars{height:72px;display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:end;border-bottom:1px solid var(--line-soft);position:relative}
+.ui .bars i{background:var(--muted-fill);border-radius:4px 4px 0 0;transform-origin:50% 100%}
+.ui .bars i.hi{background:var(--warn-bar)}
+.ui .bars .th{position:absolute;left:0;right:0;bottom:80%;border-top:1.5px dashed var(--warn)}
+.ui .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ui .tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:4px}
+.ui .tile span{font-size:12px;color:var(--sub)}
+.ui .tile b{font-size:18px}
+.ui .tile.w b{color:var(--warn)}
+.ui .warnc{background:var(--warn-soft);border-color:var(--warn-line)}
+.ui .text-warn{color:var(--warn)}
+.ui .push{position:absolute;left:10px;right:10px;top:12px;z-index:2;background:rgba(255,255,255,.96);border-radius:18px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.18);display:flex;gap:10px;align-items:flex-start}
+.ui .push img{width:34px;height:34px;border-radius:9px}
+.ui .push b{font-size:13px;display:flex;justify-content:space-between}
+.ui .push b small{font-weight:400;color:var(--sub)}
+.ui .push p{font-size:13px;line-height:1.4}
+/* call screen */
+.ui .call{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding-top:12px;text-align:center}
+.ui .av{width:88px;height:88px;border-radius:44px;background:var(--accent);display:grid;place-items:center;margin-bottom:6px;animation:pulse 1.6s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,91,211,.55)}100%{box-shadow:0 0 0 26px rgba(47,91,211,0)}}
+.ui .meta{color:#c9c9c4}
+.ui .log{width:100%;flex:1;margin-top:12px;display:flex;flex-direction:column;gap:8px;text-align:left}
+.ui .bub{max-width:80%;padding:10px 12px;line-height:1.5}
+.ui .bub.ai{align-self:flex-start;background:#262626;border:1px solid #3a3a3a;border-radius:14px 14px 14px 4px}
+.ui .bub.me{align-self:flex-end;background:#2a3d73;border-radius:14px 14px 4px 14px}
+.ui .rec{width:100%;background:#fff;color:#1a1a1a;border-radius:16px;padding:12px 16px;text-align:left}
+.ui .rec small{font-size:12px;color:#5c5c58;font-weight:600}
+.ui .rec .v{display:flex;justify-content:space-between;margin-top:4px;font-size:12px;color:#5c5c58}
+.ui .rec .v b{display:block;font-size:20px;color:#1a1a1a}
+
+/* timeline: elements with .a appear at --d after the screen starts playing */
+.scr.play .a{animation:pop .45s ease both;animation-delay:var(--d,0s)}
+@keyframes pop{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.scr.play .slide{animation:slide .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:var(--d,0s)}
+@keyframes slide{from{opacity:0;transform:translateY(-120%)}to{opacity:1;transform:none}}
+.scr.play .tap{animation:tap .3s ease both;animation-delay:var(--d,0s)}
+@keyframes tap{from{border-color:var(--line);background:var(--surface);color:var(--text)}to{border:1.5px solid var(--accent);background:var(--accent-soft);color:var(--accent-strong);font-weight:600}}
+.scr.play .tap::after,.scr.play .press::after{content:"";position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(47,91,211,.35);opacity:0;animation:ripple .6s ease-out both;animation-delay:var(--d,0s)}
+.scr.play .press::after{background:rgba(255,255,255,.5)}
+@keyframes ripple{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(2.4)}}
+.scr.play .check{animation:check .25s ease both;animation-delay:var(--d,0s)}
+@keyframes check{from{background:transparent;border-color:var(--line);color:transparent}to{background:var(--accent);border-color:var(--accent);color:#fff}}
+.scr.play .draw{stroke-dasharray:1;animation:draw 1.2s ease both;animation-delay:var(--d,0s)}
+@keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+.scr.play .grow{animation:grow .5s ease both;animation-delay:var(--d,0s)}
+@keyframes grow{from{transform:scaleY(0)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.scr .a,.scr .slide,.scr .tap,.scr .check,.scr .draw,.scr .grow,.scr .press{animation:none!important}.ui .av{animation:none}.tour .step .bar i{animation:none!important}}
+
+/* features */
+.feats{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:40px}
+.feat{display:flex;gap:16px;align-items:flex-start}
+.feat .ico{flex:none;width:40px;height:40px;border-radius:12px;background:var(--accent-tint);color:var(--accent);display:grid;place-items:center}
+.feat b{display:block;font-size:17px}
+.feat p{font-size:14px;color:var(--muted);margin-top:4px}
+
+/* pricing */
+.pricing{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.plan{padding:32px;border:2px solid var(--accent);position:relative}
+.plan .tag{position:absolute;top:-13px;left:28px;background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:700;border-radius:999px;padding:4px 12px}
+.plan .p{font-size:52px;font-weight:700;letter-spacing:-.03em;line-height:1.1;margin-top:6px}
+.plan .p small{font-size:18px;font-weight:500;color:var(--muted)}
+.plan .sub{font-size:14px;color:var(--muted);margin-top:6px}
+.plan ul{list-style:none;margin:22px 0 26px;display:flex;flex-direction:column;gap:10px;font-size:15px}
+.plan li{display:flex;gap:10px}
+.plan li::before{content:"✓";color:var(--accent);font-weight:700}
+.plan .btn{width:100%}
+.plan .fine{font-size:12px;color:var(--faint);text-align:center;margin-top:12px}
+.calls{display:flex;flex-direction:column;gap:8px;margin-top:28px}
+.calls div{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--div);border-radius:12px;padding:12px 16px;font-size:14px}
+.calls div span{color:var(--muted)}
+.calls div:first-child{border-color:transparent;background:var(--accent-tint)}
+
+/* evidence */
+.refs{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:36px}
+.ref{display:block;padding:18px 20px;transition:border-color .15s}
+.ref:hover{border-color:var(--accent)}
+.ref b{font-size:15px}
+.ref p{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* faq */
+.faq{margin-top:32px;display:flex;flex-direction:column;gap:10px;max-width:760px}
+details{background:var(--surface);border:1px solid var(--div);border-radius:14px;padding:0 20px}
+summary{cursor:pointer;font-weight:600;font-size:16px;padding:18px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--faint);font-weight:400;font-size:20px;line-height:1}
+details[open] summary::after{content:"−"}
+details p{font-size:15px;color:var(--muted);padding-bottom:18px}
+
+.final{text-align:center;padding:110px 0 96px}
+.final h2{margin:0 auto}
+.final .lead{margin:16px auto 0}
+.final .ctas{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:32px}
+footer{border-top:1px solid var(--div);padding:28px 0;font-size:13px;color:var(--faint)}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* survey dialog */
+dialog{border:0;padding:0;background:transparent;max-width:min(480px,calc(100vw - 32px));width:100%;margin:auto;color:var(--ink)}
+dialog::backdrop{background:var(--scrim)}
+.sheet{background:var(--surface);border-radius:22px;padding:28px;max-height:calc(100dvh - 48px);overflow:auto;position:relative}
+.sheet h3{font-size:21px;letter-spacing:-.01em;line-height:1.35}
+.sheet .intro{font-size:14px;color:var(--muted);margin-top:8px}
+.close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:18px;border:0;background:var(--neutral-tint);cursor:pointer;font-size:18px;color:var(--muted)}
+.q{margin-top:24px}
+.q > b{display:block;font-size:15px;margin-bottom:10px}
+.q > b small{font-weight:400;color:var(--faint)}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opts.row{flex-direction:row;flex-wrap:wrap}
+.opt{position:relative;display:block;cursor:pointer}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt span{display:block;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;transition:border-color .15s,background .15s}
+.opts.row .opt span{padding:8px 14px;font-size:14px;border-radius:999px}
+.opt input:checked + span{border-color:var(--accent);background:var(--accent-tint);color:var(--accent-dark);font-weight:600}
+.follow{margin-top:12px;display:none}
+.follow.show{display:block}
+textarea,input[type=text]{width:100%;font:15px var(--font);color:var(--ink);background:var(--ground);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+textarea{resize:vertical;min-height:72px}
+textarea:focus,input[type=text]:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.consent{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--muted);margin-top:10px;cursor:pointer}
+.consent input{margin-top:3px;accent-color:var(--accent)}
+.sheet .actions{margin-top:24px}
+.sheet .actions .btn{width:100%}
+.err{font-size:13px;color:var(--danger);margin-top:10px;min-height:1em}
+.done{text-align:center;padding:12px 0 4px}
+.done .check{width:56px;height:56px;border-radius:28px;background:var(--accent-tint);color:var(--accent);display:grid;place-items:center;margin:0 auto 16px;font-size:26px;font-weight:700}
+.done p{font-size:15px;color:var(--muted);margin-top:8px}
+
+.rv{opacity:0;transform:translateY(16px);transition:opacity .6s ease,transform .6s ease}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}html{scroll-behavior:auto}}
+
+@media (max-width:1000px){
+  .hero .wrap,.pricing{grid-template-columns:1fr}
+  .tour{grid-template-columns:1fr;gap:28px}
+  .device{order:-1}
+  .visual{height:auto;display:flex;flex-direction:column;align-items:center;gap:16px}
+  .phone,.report{position:relative;left:auto;right:auto;bottom:auto}
+  .phone{width:270px;height:540px}
+  .report{width:100%;max-width:300px}
+}
+@media (max-width:760px){
+  section{padding:72px 0}
+  .wrap{padding:0 16px}
+  nav .links{display:none}
+  nav .btn{margin-left:auto}
+  .stats,.pains,.feats,.refs{grid-template-columns:1fr}
+  .device{zoom:.72}
+  .tour{gap:16px}
+  .steps{gap:4px}
+  .step{padding:12px 14px}
+  .step:not([aria-current="true"]) p{display:none}
+  .hero .ctas .btn{width:100%}
+  .sheet{padding:24px 20px}
+}
+</style>
+<script>
+// Old patient-app links (/#/home) now live under /app/
+if (location.hash.startsWith('#/')) location.replace('./app/' + location.hash)
+</script>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#top"><img src="./icon.svg" alt="">KeepFit</a>
+    <div class="links">
+      <a href="#problem">왜 필요해요</a>
+      <a href="#how">이렇게 도와요</a>
+      <a href="#pricing">요금</a>
+      <a href="#faq">자주 묻는 질문</a>
+    </div>
+    <button class="btn primary" data-cta="nav">2주 무료로 시작하기</button>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <span class="pill"><span class="dot"></span>위고비·마운자로 감량 이후 체중 유지</span>
+      <h1>약은 끊어도,<br><em>체중은 지키도록</em></h1>
+      <p class="lead">약을 줄이면 식욕이 돌아와요. 매일 저녁 AI 코치가 2분 전화로 식욕·체중·수면을 챙기고, 다시 찌기 시작하면 먼저 알려드려요. 앱을 열어 기록할 필요가 없어요.</p>
+      <div class="ctas">
+        <button class="btn primary big" data-cta="hero">2주 무료로 시작하기</button>
+        <span class="price-note">이후 <b>월 <span data-price>9,900</span>원</b> · 언제든 해지</span>
+      </div>
+    </div>
+
+    <div class="visual" aria-hidden="true">
+      <div class="phone">
+        <div class="screen">
+          <div class="call-head">
+            <div class="avatar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></div>
+            <b>AI 코치</b><span>통화 중 · 1:24</span>
+          </div>
+          <div class="bub ai">오늘 식욕은 10점 중 몇 점이에요?</div>
+          <div class="bub me">한 7 정도요. 밤에 라면이 당겼어요.</div>
+          <div class="bub ai">그럴 땐 단백질 간식을 먼저 드셔 보세요. 아침 체중은요?</div>
+          <div class="bub me">70.4kg이요.</div>
+          <div class="rec">
+            <small>자동 기록됨</small>
+            <div class="vals">
+              <div><b>70.4</b>체중 kg</div>
+              <div><b>7</b>식욕</div>
+              <div><b>6.5h</b>수면</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="report">
+        <div class="top">이번 주 리포트<span class="ok">유지 범위 안</span></div>
+        <b class="big">70.4kg</b>
+        <small>목표 70kg ± 2kg</small>
+        <div class="band">
+          <svg viewBox="0 0 200 46" preserveAspectRatio="none"><polyline points="4,26 36,22 68,25 100,20 132,24 164,21 196,23" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="problem">
+  <div class="wrap">
+    <p class="eyebrow rv">왜 필요해요</p>
+    <h2 class="rv">감량은 끝났는데,<br>진짜 어려운 건 지금부터예요</h2>
+    <div class="stats">
+      <div class="card stat rv"><div class="num">2/3</div><p>약을 끊고 1년 뒤 다시 찌는 감량분</p><small>STEP 1 연장 연구 · Wilding 2022</small></div>
+      <div class="card stat rv"><div class="num">65%</div><p>1년 안에 투약을 중단하는 비율 (비당뇨)</p><small>JAMA Netw Open 2025 · Rodriguez</small></div>
+      <div class="card stat rv"><div class="num">약 40%</div><p>투약 중 빠진 체중 가운데 근육 등 제지방</p><small>STEP 1 DXA · Wilding 2021</small></div>
+    </div>
+    <div class="pains">
+      <div class="card rv"><b>식욕이 돌아와요</b><p>약을 줄이는 몇 주 사이에 배고픔이 확 커져요.</p></div>
+      <div class="card rv"><b>기록은 며칠 못 가요</b><p>앱을 열고 매일 적는 건 생각보다 번거로워요.</p></div>
+      <div class="card rv"><b>혼자 버티기 어려워요</b><p>언제 위험한지, 지금 뭘 해야 하는지 알기 어려워요.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="alt">
+  <div class="wrap">
+    <p class="eyebrow rv">이렇게 도와요</p>
+    <h2 class="rv">하루 2분, 전화만 받으면 돼요</h2>
+    <div class="tour rv" id="tour">
+      <div class="steps" role="tablist" aria-label="KeepFit 사용 단계">
+        <button class="step" role="tab" data-i="0"><span class="n">1</span><b>시간 정하기</b><p>매일 저녁 9시처럼 전화 받기 편한 시간을 골라요.</p><span class="bar"><i></i></span></button>
+        <button class="step" role="tab" data-i="1"><span class="n">2</span><b>AI 코치 전화</b><p>식욕·체중·수면을 물어보고 대답이 그대로 기록돼요. 못 받으면 문자로 물어봐요.</p><span class="bar"><i></i></span></button>
+        <button class="step" role="tab" data-i="2"><span class="n">3</span><b>리포트와 미션</b><p>한 주 흐름을 보여주고, 내 단계에 맞는 이번 주 미션을 줘요.</p><span class="bar"><i></i></span></button>
+        <button class="step" role="tab" data-i="3"><span class="n">4</span><b>신호는 먼저 알려요</b><p>체중이 유지 범위를 넘거나 식욕이 계속 높으면 바로 알려드리고 진료를 권해요.</p><span class="bar"><i></i></span></button>
+      </div>
+
+      <div class="device" aria-hidden="true">
+        <div class="vp">
+          <!-- 1. 전화 설정 (app #/setup) -->
+          <div class="scr" data-dur="5600"><div class="ui">
+            <div class="a" style="--d:.05s"><div class="h1">AI 코치가 언제<br>전화하면 좋을까요?</div><p class="lead" style="margin-top:6px">기록은 통화로 끝나요. 따로 앱에 입력할 필요 없어요.</p></div>
+            <div class="a" style="--d:.25s;display:flex;flex-direction:column;gap:10px"><span class="lbl">전화 빈도</span>
+              <div class="seg" style="grid-template-columns:repeat(3,1fr)"><span class="on">매일</span><span>주 3회</span><span>주 1회</span></div></div>
+            <div class="a" style="--d:.4s;display:flex;flex-direction:column;gap:10px"><span class="lbl">전화 시간</span>
+              <div class="chips"><span class="chip">아침 8:00</span><span class="chip">점심 12:30</span><span class="chip tap" style="--d:1.1s">저녁 9:00</span></div></div>
+            <div class="card a" style="--d:1.7s;gap:12px"><span class="small" style="font-weight:600;font-size:13px">약 2분 통화, 이런 걸 물어봐요</span>
+              <div class="qg"><span>식욕 (1–10)</span><span>오늘 체중</span><span>수면 시간</span><span>미션 수행 여부</span></div></div>
+            <div class="toggle a" style="--d:2.1s"><span>못 받으면 문자로 대신 답할게요</span><span class="sw check" style="--d:2.7s">✓</span></div>
+            <div class="cta press a" style="--d:3.3s">설정 완료</div>
+            <div class="toast a" style="--d:3.9s">매일 저녁 9:00에 전화할게요</div>
+          </div></div>
+
+          <!-- 2. AI 코치 통화 (app #/call) -->
+          <div class="scr" data-dur="8200"><div class="ui dark">
+            <div class="call">
+              <div class="av"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></div>
+              <b style="font-size:22px">AI 코치</b>
+              <span class="meta">통화 중 · <span id="callClock">0:00</span></span>
+              <div class="log">
+                <div class="bub ai a" style="--d:.3s">지은님, 안녕하세요. 오늘 하루 어떠셨어요? 2분이면 끝나요.</div>
+                <div class="bub me a" style="--d:1.2s">네, 괜찮았어요.</div>
+                <div class="bub ai a" style="--d:2.1s">오늘 아침 체중은 몇 kg이었어요?</div>
+                <div class="bub me a" style="--d:3s">70.4요.</div>
+                <div class="bub ai a" style="--d:3.9s">식욕은 1부터 10 중에 어느 정도였어요?</div>
+                <div class="bub me a" style="--d:4.8s">한 7 정도요. 밤에 라면이 너무 당겼어요.</div>
+              </div>
+              <div class="rec a" style="--d:5.9s"><small>자동 기록됨</small>
+                <div class="v"><div><b>70.4</b>체중 kg</div><div><b>7</b>식욕</div><div><b>5.5h</b>수면</div><div><b>20분</b>근력 운동</div></div></div>
+            </div>
+          </div></div>
+
+          <!-- 3. 내 리포트 (app #/report) -->
+          <div class="scr" data-dur="6200"><div class="ui">
+            <div class="head a" style="--d:.05s"><b>내 리포트</b><span class="small">이번 주</span></div>
+            <div class="seg a" style="--d:.15s;grid-template-columns:1fr 1fr"><span class="on">주간</span><span>월간</span></div>
+            <div class="card a" style="--d:.3s">
+              <div class="sec"><span>체중</span><span class="small" style="font-weight:400">이번 주 +0.6kg</span></div>
+              <svg width="100%" height="92" viewBox="0 0 320 120" preserveAspectRatio="none">
+                <rect x="0" y="25.7" width="320" height="68.6" fill="var(--accent-soft)"/>
+                <line x1="0" x2="320" y1="60" y2="60" stroke="#9AAEE6" stroke-dasharray="4 4"/>
+                <polyline class="draw" style="--d:.6s" pathLength="1" points="10,63.4 60,61.7 110,60 160,61.7 210,58.3 260,54.9 310,53.1" fill="none" stroke="var(--accent)" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
+                <circle class="a" style="--d:1.7s" cx="310" cy="53.1" r="4" fill="var(--accent)"/>
+              </svg>
+              <div class="days"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
+              <span class="small">파란 영역 = 유지 범위 (70kg ± 2kg)</span>
+            </div>
+            <div class="card a" style="--d:1.2s">
+              <div class="sec"><span>식욕</span><span class="text-warn" style="font-size:13px;font-weight:400">주의 기준 8 근접</span></div>
+              <div class="bars"><span class="th"></span>
+                <i class="grow" style="height:40%;--d:1.5s"></i><i class="grow" style="height:40%;--d:1.6s"></i><i class="grow" style="height:50%;--d:1.7s"></i><i class="grow" style="height:50%;--d:1.8s"></i><i class="grow" style="height:60%;--d:1.9s"></i><i class="grow hi" style="height:70%;--d:2s"></i><i class="grow hi" style="height:70%;--d:2.1s"></i>
+              </div>
+              <div class="days"><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span><span>일</span></div>
+            </div>
+            <div class="card a" style="--d:2.6s;gap:8px">
+              <div class="sec"><span>이번 주 미션</span><span class="small" style="font-weight:400">근육 지키기</span></div>
+              <div class="toggle"><span>끼니마다 단백질 먼저 (하루 85g)</span><span class="sw check" style="--d:3.2s">✓</span></div>
+              <div class="toggle"><span>근력 운동 20분</span><span class="sw check" style="--d:3.8s">✓</span></div>
+              <div class="toggle"><span>밤 12시 전 잠들기</span><span class="sw"></span></div>
+            </div>
+          </div></div>
+
+          <!-- 4. 위험 신호 알림 (app #/home, 식욕·체중이 올라갈 때) -->
+          <div class="scr" data-dur="6200"><div class="ui" style="padding-top:112px">
+            <div class="push slide" style="--d:.9s"><img src="./icon.svg" alt=""><div><b>KeepFit <small>지금</small></b><p>식욕이 3일 연속 8 이상이에요. 체중도 유지 범위를 넘었어요.</p></div></div>
+            <div class="a" style="--d:.05s"><span class="small">유지 프로그램 · 단약 적응 2주차</span><div class="h1" style="font-size:22px;margin-top:2px">지은님, 좋은 저녁이에요</div></div>
+            <div class="card warnc a" style="--d:1.8s;flex-direction:row;align-items:center;gap:12px">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg>
+              <div><b style="font-size:15px;color:var(--warn-strong)">반등 신호가 보여요</b><p class="small" style="color:var(--warn-strong)">이번 주에 다니는 병원 진료를 권해요</p></div>
+            </div>
+            <div class="sec a" style="--d:2.3s"><span>최근 통화로 기록된 내 상태</span></div>
+            <div class="tiles a" style="--d:2.5s">
+              <div class="tile w"><span>체중</span><b>72.6<small style="font-size:12px">kg</small></b><span class="text-warn">범위 초과</span></div>
+              <div class="tile w"><span>식욕</span><b>9<small style="font-size:12px">/10</small></b><span class="text-warn">7일 평균 8.2</span></div>
+              <div class="tile"><span>수면</span><b>5<small style="font-size:12px">h</small></b><span>목표 7h</span></div>
+            </div>
+            <div class="card a" style="--d:3.2s;gap:6px">
+              <span class="sec">오늘 바로 해 볼 것</span>
+              <span>저녁은 단백질부터 30g 먼저 드세요.</span>
+              <span>오늘은 12시 전에 잠들어요. 잠이 짧으면 식욕이 올라가요.</span>
+            </div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+    <p class="disclaim rv">ⓘ 약 용량 조절과 중단은 담당 의사와 상의해 주세요. KeepFit은 그 사이의 생활습관 관리를 돕는 서비스예요.</p>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <p class="eyebrow rv">들어 있는 것</p>
+    <h2 class="rv">기록은 전화로, 관리는 단계에 맞게</h2>
+    <div class="feats">
+      <div class="card feat rv"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg></span><div><b>AI 코치 전화</b><p>2분 통화로 체중·식욕·수면이 자동 기록돼요. 대답하면서 바로 조언도 받아요.</p></div></div>
+      <div class="card feat rv"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><div><b>주간·월간 리포트</b><p>유지 범위 ±2kg 안에 있는지, 식욕이 언제 올라가는지 한눈에 봐요.</p></div></div>
+      <div class="card feat rv"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><div><b>단약 로드맵</b><p>용량 줄이기 → 단약 적응 → 혼자서 유지. 지금 어느 단계인지, 무엇에 집중할지 알려줘요.</p></div></div>
+      <div class="card feat rv"><span class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg></span><div><b>근거 있는 가이드</b><p>근육 지키기, 식욕 다루기, 잠과 식욕 — 논문에서 나온 숫자로 만든 미션이에요.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing" class="alt">
+  <div class="wrap pricing">
+    <div>
+      <p class="eyebrow rv">요금</p>
+      <h2 class="rv">한 달 9,900원,<br>하루 330원이에요</h2>
+      <p class="lead rv">단계가 바뀌어도 요금은 같아요. 익숙해질수록 통화 횟수만 줄어요.</p>
+      <div class="calls rv">
+        <div><b>1–3개월 · 집중기</b><span>매일 통화</span></div>
+        <div><b>4–6개월 · 적응기</b><span>주 2–3회</span></div>
+        <div><b>7개월~ · 혼자서 유지</b><span>주 1회</span></div>
+      </div>
+    </div>
+    <div class="card plan rv">
+      <span class="tag">첫 2주 무료</span>
+      <b style="font-size:17px">KeepFit 유지 프로그램</b>
+      <div class="p"><span data-price>9,900</span><small>원/월</small></div>
+      <p class="sub">6개월 이용 시 <span data-price-6m>59,400</span>원 · 약값·진료비는 포함되지 않아요</p>
+      <ul>
+        <li>AI 코치 전화 (못 받으면 문자)</li>
+        <li>주간·월간 리포트</li>
+        <li>단약 로드맵과 근거 있는 가이드</li>
+        <li>위험 신호 알림</li>
+        <li>6개월 목표 범위(±2kg)를 지키면 마지막 달 요금 환급</li>
+      </ul>
+      <button class="btn primary big" data-cta="pricing">2주 무료로 시작하기</button>
+      <p class="fine">언제든 해지 · 체험 중 해지하면 요금이 나가지 않아요 · 회사 복지포인트 결제 가능</p>
+    </div>
+  </div>
+</section>
+
+<section id="evidence">
+  <div class="wrap">
+    <p class="eyebrow rv">근거</p>
+    <h2 class="rv">가이드의 숫자는 논문에서 왔어요</h2>
+    <div class="refs">
+      <a class="card ref rv" href="https://doi.org/10.1111/dom.14725" target="_blank" rel="noopener"><b>단약 후 체중 재증가</b><p>Wilding et al. STEP 1 trial extension. Diabetes Obes Metab, 2022</p></a>
+      <a class="card ref rv" href="https://doi.org/10.1056/NEJMoa2032183" target="_blank" rel="noopener"><b>감량 중 근육 손실</b><p>Wilding et al. STEP 1 (DXA substudy). N Engl J Med, 2021</p></a>
+      <a class="card ref rv" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12304835/" target="_blank" rel="noopener"><b>GLP-1 치료 중 영양</b><p>Mozaffarian et al. Joint Advisory (ACLM·ASN·OMA·TOS), 2025</p></a>
+      <a class="card ref rv" href="https://doi.org/10.1001/jamainternmed.2021.8098" target="_blank" rel="noopener"><b>잠과 식욕</b><p>Tasali et al. Sleep extension and energy intake. JAMA Intern Med, 2022</p></a>
+      <a class="card ref rv" href="https://doi.org/10.1056/NEJMoa061883" target="_blank" rel="noopener"><b>매일 체중 재기</b><p>Wing et al. STOP Regain. N Engl J Med, 2006</p></a>
+      <a class="card ref rv" href="https://doi.org/10.2337/dc15-0429" target="_blank" rel="noopener"><b>먹는 순서</b><p>Shukla et al. Food order and postprandial glucose. Diabetes Care, 2015</p></a>
+    </div>
+  </div>
+</section>
+
+<section id="faq" class="alt">
+  <div class="wrap">
+    <p class="eyebrow rv">자주 묻는 질문</p>
+    <h2 class="rv">궁금한 점</h2>
+    <div class="faq rv">
+      <details><summary>약을 끊은 지 꽤 됐어도 쓸 수 있나요?</summary><p>네. 지금 용량을 줄이는 중이어도, 이미 끊었어도 시작할 수 있어요. 시작할 때 현재 단계를 고르면 거기에 맞춰 통화와 미션이 정해져요.</p></details>
+      <details><summary>전화를 못 받으면 어떻게 되나요?</summary><p>문자로 짧게 같은 질문을 보내요. 답장만 해도 기록돼요.</p></details>
+      <details><summary>약 용량도 정해 주나요?</summary><p>아니요. 약 조절과 중단은 담당 의사와 상의해 주세요. KeepFit은 식욕·체중·수면을 챙기고, 위험 신호가 보이면 진료를 권해 드려요.</p></details>
+      <details><summary>해지는 어떻게 하나요?</summary><p>앱에서 언제든 해지할 수 있어요. 첫 2주 체험 중에 해지하면 요금이 나가지 않아요.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2 class="rv">빠진 체중, 이번엔 지켜요</h2>
+    <p class="lead rv">2주 동안 무료로 전화를 받아 보세요.</p>
+    <div class="ctas rv">
+      <button class="btn primary big" data-cta="final">2주 무료로 시작하기</button>
+      <span class="price-note">이후 월 <span data-price>9,900</span>원 · 언제든 해지</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>KeepFit · SNUSV Ideathon 프로토타입</span>
+    <span>의료 서비스가 아니며, 진단·처방을 대신하지 않아요</span>
+  </div>
+</footer>
+
+<dialog id="survey" aria-labelledby="sv-title">
+  <div class="sheet">
+    <button class="close" type="button" aria-label="닫기" data-close>×</button>
+    <form id="sv-form" novalidate>
+      <h3 id="sv-title">아직 출시 전이에요</h3>
+      <p class="intro">KeepFit은 지금 준비 중이라 결제는 되지 않아요. 더 잘 만들 수 있게 두 가지만 알려 주세요.</p>
+
+      <div class="q">
+        <b>월 <span data-price>9,900</span>원이면 쓰시겠어요?</b>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="answer" value="yes"><span>네, 이 가격이면 쓸래요</span></label>
+          <label class="opt"><input type="radio" name="answer" value="cheaper"><span>쓰고 싶은데 가격이 부담돼요</span></label>
+          <label class="opt"><input type="radio" name="answer" value="no"><span>지금은 필요 없어요</span></label>
+        </div>
+        <div class="follow" id="f-cheaper">
+          <b style="display:block;font-size:14px;margin:6px 0 8px">한 달에 얼마면 쓰시겠어요?</b>
+          <div class="opts row">
+            <label class="opt"><input type="radio" name="fair" value="0"><span>무료일 때만</span></label>
+            <label class="opt"><input type="radio" name="fair" value="3000"><span>3,000원</span></label>
+            <label class="opt"><input type="radio" name="fair" value="5000"><span>5,000원</span></label>
+            <label class="opt"><input type="radio" name="fair" value="7000"><span>7,000원</span></label>
+          </div>
+        </div>
+        <div class="follow" id="f-no">
+          <textarea name="reason" maxlength="500" placeholder="어떤 점이 아쉬웠는지 알려 주세요 (선택)"></textarea>
+        </div>
+      </div>
+
+      <div class="q">
+        <b>지금 GLP-1 치료는 어떤 상태예요?</b>
+        <div class="opts row">
+          <label class="opt"><input type="radio" name="glp1" value="on"><span>투약 중</span></label>
+          <label class="opt"><input type="radio" name="glp1" value="tapering"><span>줄이는 중</span></label>
+          <label class="opt"><input type="radio" name="glp1" value="stopped"><span>끊었어요</span></label>
+          <label class="opt"><input type="radio" name="glp1" value="planning"><span>시작할 예정</span></label>
+          <label class="opt"><input type="radio" name="glp1" value="none"><span>해당 없음</span></label>
+        </div>
+      </div>
+
+      <div class="q">
+        <b>출시되면 알려드릴까요? <small>(선택)</small></b>
+        <input type="text" name="contact" maxlength="120" autocomplete="email" placeholder="휴대폰 번호 또는 이메일">
+        <label class="consent"><input type="checkbox" name="consent"><span>출시 알림을 보내기 위해 연락처를 수집·이용하는 데 동의해요. 알림을 보낸 뒤 파기해요.</span></label>
+      </div>
+
+      <p class="err" id="sv-err" role="alert"></p>
+      <div class="actions"><button class="btn primary big" type="submit" id="sv-submit" disabled>보내기</button></div>
+    </form>
+
+    <div class="done" id="sv-done" hidden>
+      <div class="check">✓</div>
+      <h3>고마워요!</h3>
+      <p>보내 주신 의견은 KeepFit을 만드는 데 그대로 쓰여요.</p>
+      <div class="actions"><button class="btn big" type="button" data-close>닫기</button></div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+// Willingness-to-pay test: every "시작하기" button opens a short survey instead of checkout.
+// Events and answers go to Supabase (insert-only for the public key; nothing can be read back).
+const SB_URL = 'https://rracrasaytpbsqgmyvku.supabase.co/rest/v1/'
+const SB_KEY = 'sb_publishable_A0jk6iWbF3zS5nhjlQW2aw_chITJiz2'
+
+// ?price=12900 shows a different price, for comparing conversion across links
+const qs = new URLSearchParams(location.search)
+const priceParam = parseInt(qs.get('price'), 10)
+const PRICE = priceParam >= 1000 && priceParam <= 100000 ? priceParam : 9900
+const won = (n) => n.toLocaleString('ko-KR')
+document.querySelectorAll('[data-price]').forEach((el) => (el.textContent = won(PRICE)))
+document.querySelectorAll('[data-price-6m]').forEach((el) => (el.textContent = won(PRICE * 6)))
+if (PRICE !== 9900) {
+  document.querySelector('#pricing h2').innerHTML = `한 달 ${won(PRICE)}원,<br>하루 ${won(Math.round(PRICE / 30))}원이에요`
+}
+
+const utm = {
+  utm_source: qs.get('utm_source')?.slice(0, 100) || null,
+  utm_campaign: qs.get('utm_campaign')?.slice(0, 100) || null,
+}
+function store(key, fallback) {
+  try {
+    let v = localStorage.getItem(key)
+    if (!v) { v = fallback(); localStorage.setItem(key, v) }
+    return v
+  } catch { return fallback() }
+}
+const SESSION = store('keepfit-landing-session', () =>
+  (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)))
+
+// Not counted: local dev runs, and browsers opted out with ?track=0 (remembered on this device).
+// ?track=1 turns collection back on (and enables it on localhost for testing).
+const trackParam = qs.get('track')
+let optedOut = false
+try {
+  if (trackParam === '0') localStorage.setItem('keepfit-notrack', '1')
+  if (trackParam === '1') localStorage.removeItem('keepfit-notrack')
+  optedOut = localStorage.getItem('keepfit-notrack') === '1'
+} catch {}
+const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+const TRACK = trackParam === '1' || (!isLocal && !optedOut && trackParam !== '0')
+function send(table, row) {
+  if (!TRACK) return Promise.resolve()
+  return fetch(SB_URL + table, {
+    method: 'POST',
+    keepalive: true,
+    headers: { apikey: SB_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+    body: JSON.stringify(row),
+  }).then((r) => { if (!r.ok) throw new Error(r.status) })
+}
+function track(event, source) {
+  send('keepfit_events', {
+    session_id: SESSION, event, source: source || null, price_krw: PRICE,
+    utm_source: utm.utm_source, utm_medium: qs.get('utm_medium')?.slice(0, 100) || null,
+    utm_campaign: utm.utm_campaign, referrer: document.referrer.slice(0, 500) || null,
+  }).catch(() => {})
+}
+track('view')
+
+// --- survey -------------------------------------------------------------------------------
+const dlg = document.getElementById('survey')
+const form = document.getElementById('sv-form')
+const submit = document.getElementById('sv-submit')
+const err = document.getElementById('sv-err')
+let submitted = false
+try { submitted = localStorage.getItem('keepfit-landing-answered') === '1' } catch {}
+
+function showDone() { form.hidden = true; document.getElementById('sv-done').hidden = false }
+function openSurvey(source) {
+  track('cta_click', source)
+  if (submitted) showDone(); else track('survey_open', source)
+  if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '')
+}
+document.querySelectorAll('[data-cta]').forEach((b) => b.addEventListener('click', () => openSurvey(b.dataset.cta)))
+dlg.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => dlg.close()))
+dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close() })
+
+form.addEventListener('change', () => {
+  const a = form.answer.value
+  document.getElementById('f-cheaper').classList.toggle('show', a === 'cheaper')
+  document.getElementById('f-no').classList.toggle('show', a === 'no')
+  submit.disabled = !a
+  err.textContent = ''
+})
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault()
+  const a = form.answer.value
+  if (!a) return
+  const contact = form.contact.value.trim()
+  const consent = form.consent.checked
+  if (contact && !consent) { err.textContent = '연락처를 남기려면 수집·이용에 동의해 주세요.'; return }
+  if (contact && !/^(\S+@\S+\.\S+|[0-9+\-\s]{9,15})$/.test(contact)) { err.textContent = '휴대폰 번호나 이메일 형식을 확인해 주세요.'; return }
+  submit.disabled = true; submit.textContent = '보내는 중…'
+  try {
+    await send('keepfit_wtp', {
+      session_id: SESSION, price_krw: PRICE, answer: a,
+      fair_price_krw: a === 'cheaper' && form.fair.value !== '' ? Number(form.fair.value) : null,
+      reason: a === 'no' ? form.reason.value.trim().slice(0, 500) || null : null,
+      glp1_status: form.glp1.value || null,
+      contact: contact || null, consent: !!(contact && consent),
+      utm_source: utm.utm_source, utm_campaign: utm.utm_campaign,
+    })
+    track('survey_submit')
+    submitted = true
+    try { localStorage.setItem('keepfit-landing-answered', '1') } catch {}
+    showDone()
+  } catch {
+    err.textContent = '보내지 못했어요. 잠시 후 다시 눌러 주세요.'
+    submit.disabled = false; submit.textContent = '보내기'
+  }
+})
+
+// --- how-it-works tour: plays each app screen, then moves to the next step ---------------
+;(() => {
+  const tour = document.getElementById('tour')
+  const btns = [...tour.querySelectorAll('.step')]
+  const scrs = [...tour.querySelectorAll('.scr')]
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+  let cur = 0, next, clock, visible = false, started = false, startedAt = 0, remaining = 0
+
+  function restart(el, cls) { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls) }
+  function tickClock() {
+    const c = document.getElementById('callClock')
+    clock = setInterval(() => { const t = +c.dataset.t + 1; c.dataset.t = t; c.textContent = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}` }, 1000)
+  }
+  function schedule() {
+    startedAt = Date.now()
+    next = setTimeout(() => go((cur + 1) % scrs.length), remaining)
+    if (cur === 1) tickClock()
+  }
+  function go(i) {
+    cur = i; started = true
+    clearTimeout(next); clearInterval(clock)
+    const dur = +scrs[i].dataset.dur
+    btns.forEach((b, j) => { b.setAttribute('aria-current', j === i); b.setAttribute('aria-selected', j === i) })
+    scrs.forEach((s, j) => s.classList.toggle('on', j === i))
+    tour.style.setProperty('--dur', dur + 'ms')
+    if (still) return
+    restart(scrs[i], 'play')
+    const bar = btns[i].querySelector('.bar i'); bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = ''
+    const c = document.getElementById('callClock'); c.dataset.t = 0; c.textContent = '0:00'
+    remaining = dur
+    if (visible) schedule()
+  }
+  btns.forEach((b) => b.addEventListener('click', () => go(+b.dataset.i)))
+  if (!still) tour.classList.add('auto')
+  scrs[0].classList.add('on'); btns[0].setAttribute('aria-current', true)
+  // play only while the section is on screen; pause (not restart) when it scrolls away
+  const io = 'IntersectionObserver' in window && new IntersectionObserver(([e]) => {
+    if (e.isIntersecting === visible) return
+    visible = e.isIntersecting
+    tour.classList.toggle('paused', !visible)
+    if (!visible) { clearTimeout(next); clearInterval(clock); remaining -= Date.now() - startedAt; return }
+    if (!started) go(cur); else if (!still) schedule()
+  }, { threshold: 0.35 })
+  if (io) io.observe(tour); else { visible = true; go(0) }
+})()
+
+// fade sections in as they scroll into view
+const io = 'IntersectionObserver' in window && new IntersectionObserver((es) => {
+  es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } })
+}, { threshold: 0.12 })
+document.querySelectorAll('.rv').forEach((el) => (io ? io.observe(el) : el.classList.add('in')))
+</script>
+</body>
 </html>

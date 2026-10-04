@@ -1,18 +1,16 @@
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/Icon'
 import { Screen } from '../components/Layout'
-import { missions, patient, program, scenarios, stages } from '../data/mock'
+import { checkups, missions, nextVisit, patient, program, scenarios, stages } from '../data/mock'
 import { useAppState } from '../state/AppState'
 import { timeAgo, useLink, writeLink } from '../state/link'
 
 export default function Home() {
-  const { scenario, callTime, missionsDone, bookedSlot, update, reset } = useAppState()
+  const { scenario, callTime, callFallback, missionsDone, bookedSlot, lastEntry, update, reset } = useAppState()
   const link = useLink()
   const data = scenarios[scenario]
   // 방금 AI 코치 체크인(통화·버튼)으로 기록된 값이 있으면 그걸 보여줘요
   const lp = link.patient?.live ? link.patient : null
-  const today = lp ? { weight: lp.weight, appetite: lp.appetite, sleep: lp.sleep } : data.today
-  const appetiteNote = lp ? (lp.appetite >= 8 ? '주의 기준 초과' : `7일 평균 ${lp.appetiteAvg}`) : data.appetiteNote
   const request = link.visitRequest
   const booked = link.booking?.slot ?? bookedSlot
   const isRisk = scenario === 'risk'
@@ -54,7 +52,22 @@ export default function Home() {
       </div>
     </section>
   )
+  // 오늘 앱에서 기록했으면 그 값, 아니면 최근 기록(데모 데이터)
+  const recordedToday = !!lastEntry && new Date(lastEntry.at).toDateString() === new Date().toDateString()
+  // 방금 AI 코치 통화로 기록됐으면 그 값, 오늘 앱에서 기록했으면 그 값, 아니면 최근 기록(데모 데이터)
+  const today = lp
+    ? { weight: lp.weight, appetite: lp.appetite, sleep: lp.sleep, stress: lp.stress, symptoms: lp.symptoms }
+    : recordedToday && lastEntry
+      ? lastEntry
+      : data.today
   const inRange = Math.abs(today.weight - patient.targetWeight) <= patient.rangeKg
+  const inquiries = link.inquiries ?? []
+  const newReply = inquiries.find((q) => q.reply && !q.replySeenAt)
+  const visitQs = inquiries.filter((q) => q.kind === 'visit' && !q.reply).length
+  const visitDay = (booked ?? nextVisit.slot).replace('\n', ' ')
+  const sosLog = link.sosLog ?? []
+  const sosCount = data.sos.count + sosLog.length
+  const sosResisted = data.sos.resisted + sosLog.filter((e) => e.outcome !== 'ate').length
 
   return (
     <Screen tabs>
@@ -63,9 +76,9 @@ export default function Home() {
           <span className="eyebrow">{patient.clinic} 유지 프로그램</span>
           <b style={{ fontSize: 20 }}>{patient.name}님, 좋은 저녁이에요</b>
         </div>
-        <Link to={showAlert ? '/alert' : '/summary'} className="icon-btn" aria-label="알림" style={{ color: 'var(--text)' }}>
+        <Link to="/alert" className="icon-btn" aria-label="알림" style={{ color: 'var(--text)' }}>
           <Icon name="bell" />
-          {((showAlert && !booked) || memoIsNew) && <span className="dot" />}
+          {((showAlert && !booked) || memoIsNew || !!newReply) && <span className="dot" />}
         </Link>
       </header>
 
@@ -84,7 +97,67 @@ export default function Home() {
         </Link>
       )}
 
+      {newReply && (
+        <Link to="/ask" className="card card--new" style={{ flexDirection: 'row', alignItems: 'center', textDecoration: 'none', color: 'var(--text)' }}>
+          <div className="avatar" />
+          <div className="stack spacer" style={{ gap: 2 }}>
+            <b style={{ fontSize: 15 }}>원장님 답변이 왔어요</b>
+            <span className="small">“{newReply.text}”</span>
+          </div>
+          <Icon name="forward" size={18} />
+        </Link>
+      )}
+
       {memoIsNew && memoCard}
+
+      <section className="card">
+        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div className="stack" style={{ gap: 2 }}>
+            <span className="eyebrow">다음 진료</span>
+            <b style={{ fontSize: 16 }}>
+              {visitDay} · {booked ? '내원 요청 진료' : nextVisit.purpose}
+            </b>
+          </div>
+          <Link to="/ask" className="btn btn--small btn--outline" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+            질문 남기기
+          </Link>
+        </div>
+        <span className="small" style={{ lineHeight: 1.5 }}>
+          {recordedToday ? '오늘 기록이 원장님 차트에 들어갔어요 · 병원에서 체중 재기와 기본 문진을 건너뛰어요' : '진료 전에 기록하면 병원에서 체중 재고 기다리는 시간이 줄어요'}
+          {visitQs > 0 && <b style={{ color: 'var(--accent-strong)' }}> · 진료 때 물어볼 것 {visitQs}개</b>}
+        </span>
+      </section>
+
+      <section className="card card--dark">
+        <div className="badge-icon" style={{ width: 44, height: 44, borderRadius: 22, background: recordedToday ? '#3a3a3a' : 'var(--accent)', color: '#fff' }}>
+          <Icon name={recordedToday ? 'check' : 'scale'} size={20} />
+        </div>
+        <div className="stack spacer" style={{ gap: 2 }}>
+          <span style={{ fontSize: 12, color: '#c9c9c4' }}>{recordedToday ? '오늘 기록 완료 · 원장님께 전달됨' : `오늘 기록 · 알림 ${callTime}`}</span>
+          <b style={{ fontSize: 16 }}>{recordedToday ? '내일도 30초면 돼요' : '체중·식욕·수면 30초'}</b>
+        </div>
+        <Link to="/checkin" className="btn btn--small">
+          {recordedToday ? '수정' : '기록하기'}
+        </Link>
+      </section>
+      <Link to="/sos" className="card sos-card">
+        <div className="badge-icon">
+          <Icon name="utensils" size={20} />
+        </div>
+        <div className="stack spacer" style={{ gap: 2 }}>
+          <b style={{ fontSize: 16 }}>식욕 SOS · 지금 먹고 싶어요</b>
+          <span className="small">
+            이번 주 {sosCount}번 중 {sosResisted}번 넘겼어요
+          </span>
+        </div>
+        <Icon name="forward" size={18} />
+      </Link>
+
+      {callFallback && (
+        <Link to="/call" className="small" style={{ textAlign: 'center', marginTop: -4 }}>
+          기록을 2일 놓치면 AI 코치가 전화해요 · 지금 전화로 기록하기
+        </Link>
+      )}
 
       <section className="card">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -92,35 +165,20 @@ export default function Home() {
             {program.stage}단계 · {stages[program.stage - 1].title} {program.stageWeek}주차
           </b>
           <span className="eyebrow">
-            D+{program.day} / {program.totalDays}
+            {program.stageWeek} / {program.stageWeeks}주
           </span>
         </div>
         <div className="progress">
-          <div style={{ width: `${(program.day / program.totalDays) * 100}%` }} />
+          <div style={{ width: `${(program.stageWeek / program.stageWeeks) * 100}%` }} />
         </div>
-        <span className="eyebrow">식욕이 조금씩 돌아오는 시기예요. 단백질을 먼저 챙겨요.</span>
+        <span className="eyebrow">
+          다음 점검 내원 · {checkups[0].when} ({checkups[0].date.replace(' 예정', '')})
+        </span>
       </section>
-
-      <section className="card card--dark">
-        <div className="badge-icon" style={{ width: 44, height: 44, borderRadius: 22, background: 'var(--accent)', color: '#fff' }}>
-          <Icon name="phone" size={20} />
-        </div>
-        <div className="stack spacer" style={{ gap: 2 }}>
-          <span style={{ fontSize: 12, color: '#c9c9c4' }}>다음 AI 코치 전화</span>
-          <b style={{ fontSize: 16 }}>오늘 {callTime}</b>
-        </div>
-        <Link to="/call" className="btn btn--small">
-          지금 받기
-        </Link>
-      </section>
-      <Link to="/checkin" className="link-row" style={{ minHeight: 44, marginTop: -8 }}>
-        <span>통화가 어려우면 소리 없이 눌러서 답하기 · 20초</span>
-        <Icon name="forward" size={16} />
-      </Link>
 
       <div className="section-title" style={{ marginTop: 4 }}>
-        <span>{lp ? '방금 체크인으로 기록된 내 상태' : '최근 통화로 기록된 내 상태'}</span>
-        <Link to="/summary">요약 보기</Link>
+        <span>{lp ? '방금 AI 통화로 기록된 내 상태' : recordedToday ? '오늘 기록한 내 상태' : '최근 기록된 내 상태'}</span>
+        <Link to="/report">리포트 보기</Link>
       </div>
       <div className="tiles">
         <div className="tile">
@@ -137,15 +195,15 @@ export default function Home() {
             {today.appetite}
             <small>/10</small>
           </span>
-          <span className="small text-warn">{appetiteNote}</span>
+          <span className={`small${today.appetite >= 7 ? ' text-warn' : ''}`}>{lp || recordedToday ? (today.appetite >= 8 ? '주의 기준 8 이상' : '오늘 기록') : data.appetiteNote}</span>
         </div>
         <div className="tile">
-          <span className="tile__label">수면</span>
+          <span className="tile__label">스트레스</span>
           <span className="tile__value">
-            {today.sleep}
-            <small>시간</small>
+            {today.stress ?? data.today.stress}
+            <small>/10</small>
           </span>
-          <span className="small">목표 7시간</span>
+          <span className={`small${(today.stress ?? 0) >= 8 ? ' text-warn' : ''}`}>수면 {today.sleep}시간</span>
         </div>
       </div>
 
@@ -173,7 +231,7 @@ export default function Home() {
         <button
           type="button"
           onClick={() => {
-            update({ scenario: isRisk ? 'normal' : 'risk', bookedSlot: null })
+            update({ scenario: isRisk ? 'normal' : 'risk', bookedSlot: null, lastEntry: null })
             writeLink({ visitRequest: null, booking: null })
           }}
         >
