@@ -1,0 +1,1197 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KeepFit 데모 촬영</title>
+<meta name="description" content="데모 영상 장면 8개를 1920×1080으로 재생·녹화하는 촬영용 페이지">
+<link rel="icon" href="../icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Film studio: every scene is a pure function of time t (scene.render(t)), so the same frame
+   comes out whether you play live, step with the keyboard, or render frame-by-frame (?rec=1). */
+:root{
+  --ground:#ECECE8;--bg:#F4F4F2;--surface:#FFFFFF;--ink:#1A1A1A;--muted:#5C5C58;--faint:#9A9A95;--line:#D6D6D2;--div:#E6E6E2;
+  --accent:#2F5BD3;--accent-dark:#1E3F9E;--accent-tint:#E9EEFB;--band:#9AAEE6;
+  --warn:#B4500B;--warn-dark:#8A3D08;--warn-tint:#FDF1E7;--warn-line:#F2C9A6;--warn-bar:#E59A62;
+  --danger:#B42318;--danger-tint:#FDECEA;--danger-line:#F4C1BC;--ok:#1F7A4D;--ok-tint:#E5F3EC;
+  --neutral-tint:#EDEDEA;--call:#121212;
+  --font:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:#111;overflow:hidden}
+body{font-family:var(--font);color:var(--ink);-webkit-font-smoothing:antialiased}
+b{font-weight:700}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;background:var(--ground);overflow:hidden;transform-origin:0 0}
+.scene{position:absolute;inset:0;display:none}
+.scene.on{display:block}
+.abs{position:absolute}
+.kicker{position:absolute;left:72px;top:56px;display:flex;align-items:center;gap:12px;font-size:22px;font-weight:600;color:var(--muted);z-index:5}
+.kicker i{font-style:normal;background:var(--ink);color:#fff;border-radius:999px;padding:4px 14px;font-size:18px;font-weight:600}
+body.clean .kicker{display:none}
+.side-label{position:absolute;font-size:18px;font-weight:600;color:var(--muted);display:flex;gap:8px;align-items:center}
+.side-label b{color:var(--ink)}
+
+/* ---------- phone ---------- */
+.phone{position:absolute;width:414px;height:868px;border-radius:58px;background:#151515;padding:12px;box-shadow:0 30px 60px rgba(0,0,0,.18),0 0 0 2px #2a2a2a inset}
+.phone .scr{position:relative;width:390px;height:844px;border-radius:46px;overflow:hidden;background:var(--bg)}
+.phone .island{position:absolute;left:50%;top:11px;width:120px;height:34px;margin-left:-60px;border-radius:20px;background:#000;z-index:20}
+.sbar{position:absolute;left:0;right:0;top:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:6px 32px 0 40px;font-size:16px;font-weight:600;z-index:15}
+.sbar .ic{display:flex;gap:6px;align-items:center}
+.sbar.light{color:#fff}
+.view{position:absolute;inset:0;padding:64px 22px 24px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
+.view.dark{background:var(--call);color:#fff}
+.view.lock{background:linear-gradient(170deg,#2B3A67 0%,#5A4E7A 55%,#C98A7A 100%);color:#fff;align-items:center;padding-top:110px}
+.lock .ltime{font-size:84px;font-weight:600;letter-spacing:-.02em;line-height:1}
+.lock .ldate{font-size:20px;font-weight:500;opacity:.9;margin-top:8px}
+.notif{position:absolute;left:12px;right:12px;top:58px;background:rgba(250,250,250,.94);color:var(--ink);border-radius:22px;padding:14px 16px;display:flex;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:12}
+.notif .ap{width:38px;height:38px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;font-size:16px;flex:none}
+.notif .tx{display:grid;gap:2px;font-size:14px;line-height:1.4;min-width:0}
+.notif .tx b{font-size:14px;display:flex;justify-content:space-between}
+.notif .tx b span{font-weight:400;color:var(--faint);font-size:13px}
+.tap{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(47,91,211,.28);border:2px solid rgba(47,91,211,.7);pointer-events:none;z-index:60;opacity:0}
+
+/* app pieces (match src/styles.css) */
+.eyebrow{font-size:14px;color:var(--accent);font-weight:600}
+.h1{font-size:25px;line-height:1.35;font-weight:700;letter-spacing:-.01em}
+.lead{font-size:15px;line-height:1.6;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.card.accent{background:var(--accent-tint);border-color:transparent}
+.card.warn{background:var(--warn-tint);border-color:var(--warn-line)}
+.card.dark{background:var(--ink);color:#fff;border-color:transparent}
+.btn{height:56px;border-radius:14px;background:var(--accent);color:#fff;font-weight:600;font-size:17px;display:grid;place-items:center;border:0}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.grow{flex:1}
+.row{display:flex;gap:10px;align-items:center}
+.between{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.small{font-size:13px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 11px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap}
+.pill.info{background:var(--accent-tint);color:var(--accent-dark)}
+.pill.warn{background:var(--warn-tint);color:var(--warn)}
+.pill.danger{background:var(--danger-tint);color:var(--danger)}
+.pill.ok{background:var(--ok-tint);color:var(--ok)}
+.pill.gray{background:var(--neutral-tint);color:var(--muted)}
+.pill.dot::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.trio small{display:block;font-size:13px;color:var(--muted)}
+.trio b{font-size:21px}
+.slot{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:10px 4px;text-align:center;font-size:15px;line-height:1.35}
+.slot.sel{border:1.5px solid var(--accent);background:var(--accent-tint);color:var(--accent-dark);font-weight:600}
+
+/* call screen */
+.call-top{display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:8px}
+.call-av{width:76px;height:76px;border-radius:50%;background:var(--accent);display:grid;place-items:center;color:#fff;font-weight:700;font-size:26px;position:relative}
+.call-av .ring{position:absolute;inset:-4px;border-radius:50%;border:3px solid rgba(111,143,240,.7)}
+.call-name{font-size:24px;font-weight:700}
+.call-sub{font-size:15px;color:#bdbdb8}
+.log{position:relative;flex:1;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 60px)}
+.log .inner{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;gap:10px}
+.bb{max-width:88%;padding:11px 14px;border-radius:18px 18px 18px 6px;background:#2A2A2A;font-size:17px;line-height:1.5;align-self:flex-start}
+.bb.me{align-self:flex-end;background:#2F5BD3;border-radius:18px 18px 6px 18px}
+.bb .who{display:block;font-size:12px;opacity:.6;margin-bottom:2px;font-weight:600}
+.bb .w{transition:none}
+.bb mark{background:none;color:inherit;border-radius:6px;padding:1px 3px;margin:0 -3px}
+.bb mark.hit{background:#FFD84D;color:#1A1A1A;font-weight:700}
+.speak{display:flex;align-items:center;justify-content:center;gap:12px;height:44px;font-size:15px;color:#cfcfca}
+.bars{display:flex;gap:4px;align-items:center;height:28px}
+.bars i{display:block;width:5px;border-radius:3px;background:#6F8FF0}
+.bars.me i{background:#fff}
+.endbtn{width:72px;height:72px;border-radius:50%;background:#D23B2E;display:grid;place-items:center;margin:4px auto 0}
+.acceptrow{display:flex;justify-content:space-between;padding:0 30px 30px}
+.acceptrow div{display:grid;justify-items:center;gap:8px;font-size:15px}
+.acceptrow i{width:76px;height:76px;border-radius:50%;display:grid;place-items:center}
+
+/* ---------- dashboard window ---------- */
+.win{position:absolute;background:var(--surface);border-radius:18px;box-shadow:0 30px 70px rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.06);overflow:hidden;display:flex;flex-direction:column}
+.win .chrome{height:44px;flex:none;background:#F7F7F5;border-bottom:1px solid var(--div);display:flex;align-items:center;gap:8px;padding:0 16px}
+.win .chrome i{width:12px;height:12px;border-radius:50%;background:#E0E0DC}
+.win .chrome .url{margin-left:18px;height:28px;flex:1;max-width:460px;border-radius:8px;background:#EDEDEA;font-size:13px;color:var(--muted);display:flex;align-items:center;padding:0 12px}
+.dash{flex:1;display:grid;grid-template-columns:220px minmax(0,1fr);min-height:0;background:var(--bg);font-size:15px}
+.dside{background:var(--surface);border-right:1px solid var(--div);padding:22px 14px;display:flex;flex-direction:column;gap:20px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 6px}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;flex:none;font-size:15px}
+.brand b{display:block;font-size:16px}.brand small{font-size:12px;color:var(--muted)}
+.dnav{display:grid;gap:4px}
+.dnav div{height:42px;border-radius:11px;display:flex;align-items:center;gap:10px;padding:0 12px;font-weight:500;color:var(--ink)}
+.dnav div.on{background:var(--accent-tint);color:var(--accent-dark);font-weight:600}
+.dnav svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+.dnav .cnt{margin-left:auto;min-width:22px;height:22px;border-radius:11px;background:var(--danger);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center;padding:0 6px}
+.dmain{padding:26px 30px;display:flex;flex-direction:column;gap:16px;min-width:0;position:relative;overflow:hidden}
+.dh1{font-size:24px;font-weight:700;letter-spacing:-.01em}
+.dsub{font-size:14px;color:var(--muted);margin-top:2px}
+.dcard{background:var(--surface);border:1px solid var(--div);border-radius:16px;padding:18px 20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.dcard h3{font-size:16px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.field{display:grid;gap:5px}
+.field label{font-size:13px;color:var(--muted);font-weight:500}
+.field .in{height:44px;border:1px solid var(--line);border-radius:10px;padding:0 13px;display:flex;align-items:center;font-size:16px;background:var(--surface)}
+.field .in.focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dbtn{height:48px;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;font-size:16px;display:grid;place-items:center}
+.dbtn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.ptable{display:grid}
+.prow{display:grid;grid-template-columns:150px 180px minmax(0,1fr) 170px;gap:12px;align-items:center;padding:14px 16px;border-top:1px solid var(--div);font-size:15px;position:relative;background:var(--surface)}
+.prow:first-child{border-top:0}
+.prow .nm b{font-size:16px}.prow .nm small{display:block;font-size:12px;color:var(--faint)}
+.prow .why{font-size:14px;color:var(--muted)}
+.thead{display:grid;grid-template-columns:150px 180px minmax(0,1fr) 170px;gap:12px;padding:10px 16px;font-size:12px;color:var(--faint);font-weight:600;border-bottom:1px solid var(--div)}
+.tiles4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tl4{border:1px solid var(--div);border-radius:14px;padding:12px 14px;display:grid;gap:2px;background:var(--surface)}
+.tl4 .l{font-size:13px;color:var(--muted)}
+.tl4 .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.tl4 .v small{font-size:13px;font-weight:500;color:var(--muted)}
+.tl4 .s{font-size:12.5px;color:var(--muted)}
+.tl4.bad{border-color:var(--danger-line);background:var(--danger-tint)}.tl4.bad .s{color:var(--danger)}
+.tl4.mid{border-color:var(--warn-line);background:var(--warn-tint)}.tl4.mid .s{color:var(--warn-dark)}
+.quote{background:var(--bg);border-radius:12px;padding:12px 14px;font-size:15px;line-height:1.5}
+.quote small{display:block;font-size:12px;color:var(--faint);margin-bottom:2px}
+.checks{display:grid;gap:8px;font-size:14px;line-height:1.5}
+.checks div{display:flex;gap:8px;align-items:baseline}
+.bk{flex:none;font-size:11.5px;font-weight:700;border-radius:6px;padding:1px 7px;background:var(--warn-tint);color:var(--warn)}
+.bk.q{background:var(--accent-tint);color:var(--accent-dark)}
+.tagc{height:38px;padding:0 15px;border-radius:19px;border:1px solid var(--line);background:var(--surface);font-size:14px;display:inline-flex;align-items:center;white-space:nowrap}
+.tagc.on{border-color:var(--accent);background:var(--accent-tint);color:var(--accent-dark);font-weight:600}
+
+/* ---------- overlays ---------- */
+#fx{position:absolute;inset:0;pointer-events:none;z-index:50}
+#fx svg{position:absolute;inset:0;width:1920px;height:1080px;overflow:visible}
+.beam-chip{position:absolute;transform:translate(-50%,-140%);background:var(--accent);color:#fff;font-size:17px;font-weight:600;padding:8px 14px;border-radius:999px;white-space:nowrap;box-shadow:0 8px 20px rgba(47,91,211,.35);display:flex;gap:8px;align-items:center}
+.beam-chip.warn{background:var(--danger);box-shadow:0 8px 20px rgba(180,35,24,.35)}
+.fly{position:absolute;transform:translate(-50%,-50%);background:#FFD84D;color:#1A1A1A;font-weight:700;font-size:19px;padding:6px 14px;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.25);white-space:nowrap;z-index:55}
+#cursor{position:absolute;left:0;top:0;width:30px;height:30px;z-index:70;pointer-events:none;opacity:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+#click{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:3px solid var(--accent);z-index:69;opacity:0;pointer-events:none}
+
+/* ---------- S1 calendar ---------- */
+.cal{position:absolute;background:var(--surface);border-radius:24px;padding:28px 30px;box-shadow:0 20px 50px rgba(0,0,0,.08);transform-origin:0 0}
+.cal .ch{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}
+.cal .ch b{font-size:30px}
+.cal .grid{display:grid;grid-template-columns:repeat(7,112px);gap:8px}
+.cal .dow{font-size:15px;color:var(--faint);font-weight:600;text-align:center;padding-bottom:4px}
+.cell{height:100px;border-radius:14px;background:var(--bg);position:relative;padding:8px 10px;font-size:16px;color:var(--muted);font-weight:500}
+.cell .ev{position:absolute;left:8px;right:8px;bottom:8px;display:flex;align-items:center;gap:5px;font-size:13.5px;font-weight:600;border-radius:8px;padding:4px 7px;white-space:nowrap}
+.cell .ev svg{width:16px;height:16px;flex:none}
+.cell.visit{background:var(--accent);color:#fff}
+.cell.visit .ev{background:rgba(255,255,255,.2);color:#fff}
+.cell .life{background:var(--warn-tint);color:var(--warn);white-space:normal;line-height:1.25;align-items:flex-start}
+.cell .life svg{margin-top:1px}
+.cell .callev{background:var(--accent-tint);color:var(--accent-dark)}
+.cell.empty{background:none}
+.brace{position:absolute;height:4px;background:var(--ink);border-radius:2px}
+.statcard{position:absolute;background:var(--surface);border-radius:24px;padding:34px 38px;box-shadow:0 20px 50px rgba(0,0,0,.08)}
+.big{font-size:44px;font-weight:700;line-height:1.3;letter-spacing:-.02em}
+.big em{font-style:normal;color:var(--danger)}
+.src{font-size:15px;color:var(--faint)}
+
+/* S4 timeline */
+.tline{position:absolute;left:160px;right:160px;top:500px;height:14px;border-radius:7px;background:var(--div)}
+.tline .seg{position:absolute;top:0;bottom:0;border-radius:7px}
+.tmark{position:absolute;top:-14px;width:4px;height:42px;margin-left:-2px;border-radius:2px;background:var(--ink)}
+.tlab{position:absolute;transform:translateX(-50%);text-align:center;white-space:nowrap}
+.tlab b{display:block;font-size:26px}
+.tlab span{font-size:18px;color:var(--muted)}
+.playhead{position:absolute;top:-22px;width:22px;height:58px;margin-left:-11px}
+.playhead i{position:absolute;left:9px;top:0;bottom:0;width:4px;border-radius:2px;background:var(--danger)}
+.playhead b{position:absolute;left:50%;top:-52px;transform:translateX(-50%);background:var(--danger);color:#fff;font-size:20px;padding:6px 14px;border-radius:10px;white-space:nowrap}
+
+/* S5 record card */
+.reccard{position:absolute;left:690px;top:120px;width:1150px;height:880px;background:var(--surface);border-radius:26px;box-shadow:0 30px 70px rgba(0,0,0,.12);padding:32px 36px;display:flex;flex-direction:column;gap:20px}
+.reccard .rh{display:flex;justify-content:space-between;align-items:flex-start}
+.reccard .rh b{font-size:28px;letter-spacing:-.01em}
+.reccard .rh small{display:block;font-size:16px;color:var(--muted);margin-top:4px}
+.rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.rf{border:1.5px dashed var(--line);border-radius:18px;padding:16px 18px;height:200px;display:flex;flex-direction:column;gap:6px;position:relative;background:var(--surface)}
+.rf.filled{border-style:solid;border-color:var(--div)}
+.rf.bad{border-style:solid;border-color:var(--danger-line);background:var(--danger-tint)}
+.rf.mid{border-style:solid;border-color:var(--warn-line);background:var(--warn-tint)}
+.rf .l{font-size:16px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px}
+.rf .l svg{width:20px;height:20px}
+.rf .ph{font-size:30px;color:var(--line);font-weight:700}
+.rf .v{font-size:38px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em;line-height:1.15}
+.rf .v small{font-size:18px;color:var(--muted);font-weight:500;margin-left:2px}
+.rf .s{font-size:15px;color:var(--muted)}
+.rf.bad .s{color:var(--danger);font-weight:600}.rf.mid .s{color:var(--warn-dark);font-weight:600}
+.rf .qv{font-size:19px;line-height:1.45;font-weight:600}
+.rf .flash{position:absolute;inset:-2px;border-radius:18px;border:3px solid #FFC400;pointer-events:none}
+.rf svg.spark{width:100%;height:34px;margin-top:auto}
+.rules{border-top:1px solid var(--div);padding-top:16px;display:grid;gap:10px}
+.rules>small{font-size:15px;color:var(--faint);font-weight:600}
+.rule{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:12px;align-items:center;font-size:18px}
+.rule .bx{width:28px;height:28px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center}
+.rule.on .bx{background:var(--danger);border-color:var(--danger)}
+.rule .rv{font-weight:700;color:var(--faint)}
+.rule.on .rv{color:var(--danger)}
+.verdict{border-radius:16px;background:var(--danger);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:14px;font-size:20px;font-weight:700}
+.verdict small{font-weight:500;opacity:.85;font-size:16px;display:block}
+.aiwont{font-size:15px;color:var(--muted);display:flex;gap:8px;align-items:center}
+.stamp{position:absolute;right:36px;top:32px}
+
+/* S8 */
+.node{position:absolute;width:360px;padding:30px;border-radius:26px;background:var(--surface);box-shadow:0 20px 50px rgba(0,0,0,.08);text-align:center;display:grid;gap:10px;justify-items:center}
+.node .ic{width:84px;height:84px;border-radius:24px;display:grid;place-items:center}
+.node b{font-size:30px}
+.node span{font-size:18px;color:var(--muted);line-height:1.5}
+.flow{position:absolute;font-size:20px;font-weight:600;text-align:center;line-height:1.45;white-space:nowrap}
+.flow small{display:block;font-size:16px;font-weight:500;color:var(--muted)}
+
+/* HUD (hidden while recording) */
+#hud{position:fixed;left:0;right:0;bottom:0;z-index:100;background:rgba(20,20,20,.92);color:#eee;font:13px/1.4 var(--font);padding:8px 14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+#hud button{font:600 12px var(--font);background:#333;color:#eee;border:0;border-radius:7px;padding:6px 10px;cursor:pointer}
+#hud button.on{background:#2F5BD3}
+#hud .sc{display:flex;gap:4px}
+#hud .bar{flex:1;min-width:200px;height:6px;border-radius:3px;background:#444;position:relative;cursor:pointer}
+#hud .bar i{position:absolute;left:0;top:0;bottom:0;background:#6F8FF0;border-radius:3px}
+#hud .bar u{position:absolute;top:-3px;width:2px;height:12px;background:#aaa}
+#hud .keys{color:#999;font-size:12px}
+body.rec #hud,body.nohud #hud{display:none}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- ========== S1 · 진료와 진료 사이 ========== -->
+<section class="scene" id="s1">
+  <div class="kicker"><i>문제</i>투약 중, 진료와 진료 사이</div>
+  <div class="cal" id="s1cal" style="left:0;top:0">
+    <div class="ch"><b>투약 중 한 달</b><span class="small" style="font-size:17px">진료는 두 번, 나머지는 혼자</span></div>
+    <div class="grid" id="s1grid"></div>
+  </div>
+  <div class="abs" id="s1alone" style="left:0;right:0;top:930px;text-align:center;font-size:34px;font-weight:700">진료 사이 <span style="color:var(--warn)">28일</span>, 근육과 습관은 혼자 지켜야 해요</div>
+  <div class="statcard" id="s1stat" style="left:1010px;top:200px;width:840px">
+    <p class="big">이걸 못 지키면, 약을 끊고<br>1년 안에 감량한 체중의<br><em>3분의 2</em>가 돌아와요</p>
+    <svg id="s1chart" viewBox="0 0 730 300" style="width:730px;height:300px;margin-top:26px"></svg>
+    <p class="src">STEP 1 연장 연구 · Wilding 외, Diabetes Obes Metab 2022</p>
+  </div>
+</section>
+
+<!-- ========== S2 · 첫 처방일 등록 ========== -->
+<section class="scene" id="s2">
+  <div class="kicker"><i>0주차</i>첫 처방일, 병원이 등록하면 환자 앱이 바로 연결돼요</div>
+  <div class="side-label" style="left:72px;top:118px"><b>병원 대시보드</b> · 원장님</div>
+  <div class="side-label" style="left:1410px;top:118px"><b>환자 앱</b> · 정다은</div>
+  <div class="win" style="left:72px;top:150px;width:1220px;height:860px">
+    <div class="chrome"><i></i><i></i><i></i><div class="url">keepfit.app/clinic · 환자 등록</div></div>
+    <div class="dash">
+      <div class="dside" data-side="new"></div>
+      <div class="dmain">
+        <div><p class="dh1">새 환자 등록</p><p class="dsub">첫 처방일에 등록하면 AI 전화 관리가 바로 시작돼요</p></div>
+        <div style="display:grid;grid-template-columns:430px minmax(0,1fr);gap:16px;align-items:start">
+          <div class="dcard" id="s2form">
+            <h3>처방 정보</h3>
+            <div class="f2"><div class="field"><label>이름</label><div class="in" data-type="정다은"></div></div><div class="field"><label>나이</label><div class="in" data-type="34세"></div></div></div>
+            <div class="field"><label>처방</label><div class="in" data-type="위고비 0.25mg · 주 1회"></div></div>
+            <div class="f2"><div class="field"><label>시작 체중</label><div class="in" data-type="82.0kg"></div></div><div class="field"><label>목표 체중</label><div class="in" data-type="70.0kg"></div></div></div>
+            <div class="field"><label>AI 전화</label><div class="in" data-type="주 2회 · 저녁 9시"></div></div>
+            <div class="dbtn" id="s2reg">프로그램 등록 · 앱 초대 보내기</div>
+          </div>
+          <div class="dcard" style="padding:8px 0 4px">
+            <h3 style="padding:10px 18px 8px">관리 중 환자 <span class="small">128명</span></h3>
+            <div id="s2list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="phone" style="left:1410px;top:150px"><div class="scr"><div class="island"></div>
+    <div class="sbar light" data-sbar><span>2:20</span><span class="ic">●●● ▮</span></div>
+    <div class="view lock" data-v="lock"><div class="ltime">2:20</div><div class="ldate">4월 6일 월요일</div></div>
+    <div class="notif" id="s2notif"><div class="ap">K</div><div class="tx"><b>한빛의원 · KeepFit <span>지금</span></b>다은 님, 비만 치료 관리 프로그램에 등록됐어요. 눌러서 시작해 주세요.</div></div>
+    <div class="view" data-v="invite">
+      <div class="row" style="gap:10px"><div class="logo" style="width:34px;height:34px">한</div><b style="font-size:16px">한빛의원</b></div>
+      <p class="eyebrow">오늘 원장님이 등록한 프로그램</p>
+      <p class="h1">다은 님, 첫 처방일부터<br>원장님이 함께해요</p>
+      <p class="lead">진료와 진료 사이엔 AI 코치가 전화로 안부를 묻고, 기록은 원장님 차트에 자동으로 남아요.</p>
+      <div class="card">
+        <div class="between"><b style="font-size:15px;color:var(--muted)">병원에서 받은 처방 정보</b><span class="pill info">이용료 0원</span></div>
+        <div class="trio"><div><small>처방</small><b>위고비</b></div><div><small>시작 체중</small><b>82kg</b></div><div><small>목표 체중</small><b>70kg</b></div></div>
+      </div>
+      <div class="card accent" style="flex-direction:row;align-items:center;gap:12px">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2F5BD3" stroke-width="1.8" stroke-linecap="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>
+        <div><b style="font-size:16px">AI 코치 전화 · 주 2회 저녁 9시</b><p class="small">통화로 답하면 기록이 끝나요</p></div>
+      </div>
+      <div class="grow"></div>
+      <div class="btn" id="s2start">시작하기</div>
+    </div>
+    <div class="view" data-v="home">
+      <p class="small" style="font-size:14px">한빛의원 · 투약 1주차</p>
+      <p class="h1">다은 님, 반가워요</p>
+      <div class="card dark" style="flex-direction:row;align-items:center;gap:14px">
+        <div style="width:46px;height:46px;border-radius:50%;background:#2F5BD3;display:grid;place-items:center;flex:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></div>
+        <div><small style="opacity:.7;font-size:13px">첫 AI 코치 전화</small><b style="display:block;font-size:18px">오늘 저녁 9:00</b></div>
+      </div>
+      <div class="card">
+        <b style="font-size:16px">나의 치료 단계</b>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+          <div style="height:8px;border-radius:4px;background:var(--accent)"></div><div style="height:8px;border-radius:4px;background:var(--div)"></div><div style="height:8px;border-radius:4px;background:var(--div)"></div>
+        </div>
+        <div class="between small"><span style="color:var(--accent-dark);font-weight:600">투약 · 감량</span><span>단약 준비</span><span>단약 후 유지</span></div>
+      </div>
+      <div class="card"><div class="between"><b style="font-size:16px">원장님 차트와 연결됨</b><span class="pill ok dot">연결</span></div><p class="small">통화·기록 내용이 진료 전에 원장님께 전달돼요</p></div>
+    </div>
+  </div></div>
+</section>
+
+<!-- ========== S3 · 투약 중 통화 ========== -->
+<section class="scene" id="s3">
+  <div class="kicker"><i>투약 중</i>AI가 먼저 전화하고, 기록은 저절로 남아요</div>
+  <div class="cal" id="s3cal" style="left:420px;top:150px">
+    <div class="ch"><b>투약 중 한 달</b><span class="small" style="font-size:17px">빈칸마다 AI 코치 전화</span></div>
+    <div class="grid" id="s3grid"></div>
+  </div>
+  <div id="s3main">
+    <div class="side-label" style="left:150px;top:118px"><b>환자 앱</b> · AI 코치 전화</div>
+    <div class="side-label" style="left:700px;top:118px"><b>병원 대시보드</b> · 정다은 차트</div>
+    <div class="phone" style="left:150px;top:150px"><div class="scr"><div class="island"></div>
+      <div class="sbar light"><span>9:02</span><span class="ic">●●● ▮</span></div>
+      <div class="view dark" style="gap:18px">
+        <div class="call-top"><div class="call-av">K</div><p class="call-name">AI 코치</p><p class="call-sub" id="s3wk">통화 중</p></div>
+        <div id="s3calls" style="position:relative;flex:1"></div>
+        <div class="endbtn"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M3 15c5-5 13-5 18 0l-2.5 2.5-3-1.5v-2.5a10 10 0 0 0-5 0V16l-3 1.5z"/></svg></div>
+      </div>
+    </div></div>
+    <div class="win" style="left:700px;top:150px;width:1150px;height:860px">
+      <div class="chrome"><i></i><i></i><i></i><div class="url">keepfit.app/clinic · 정다은</div></div>
+      <div class="dash">
+        <div class="dside" data-side="chart"></div>
+        <div class="dmain">
+          <div class="between"><div><p class="dh1">정다은 <span style="font-weight:500;color:var(--muted);font-size:18px">34세 · 위고비</span></p><p class="dsub" id="s3sub">투약 중 · 진료 사이 기록은 AI 전화로 자동 입력</p></div><span class="pill info dot" id="s3wkpill">투약 2주차</span></div>
+          <div class="dcard"><h3>체중 <span class="small" id="s3wnow">82.0kg</span></h3><svg id="s3chart" viewBox="0 0 820 250" style="width:100%;height:250px"></svg></div>
+          <div class="dcard" style="flex:1"><h3>AI 전화 자동 기록 <span class="small">원장님이 입력하지 않아도 쌓여요</span></h3><div id="s3tl" style="display:grid;gap:0"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== S4 · 투약 종료 → 단약 3주차 ========== -->
+<section class="scene" id="s4">
+  <div class="kicker"><i>27주차</i>약을 끊은 지 3주</div>
+  <div id="s4tl">
+    <div class="abs" style="left:160px;top:300px;font-size:44px;font-weight:700;letter-spacing:-.02em" id="s4head">정다은 님의 치료 타임라인</div>
+    <div class="tline"><div class="seg" id="s4seg1" style="background:var(--accent)"></div><div class="seg" id="s4seg2" style="background:var(--warn-bar)"></div>
+      <div class="tmark" style="left:0"></div><div class="tmark" id="s4m24"></div>
+      <div class="playhead" id="s4ph"><i></i><b id="s4phl">18주차</b></div>
+    </div>
+    <div class="tlab" style="left:160px;top:570px;transform:none;text-align:left"><b>0주</b><span>첫 처방 · 82.0kg</span></div>
+    <div class="tlab" id="s4l24" style="top:570px"><b>24주 · 투약 종료</b><span>70.0kg 도달</span></div>
+    <div class="tlab" id="s4l27" style="top:570px;color:var(--warn-dark)"><b>27주 · 단약 3주차</b><span style="color:var(--warn-dark)">오늘</span></div>
+    <div class="abs" id="s4note" style="left:160px;top:730px;width:1600px;font-size:30px;line-height:1.5;color:var(--muted)">약을 끊으면 식욕이 돌아오기 시작해요. <b style="color:var(--ink)">이때가 요요가 시작되는 구간</b>이에요.</div>
+  </div>
+  <div id="s4ring">
+    <div class="phone" style="left:753px;top:106px"><div class="scr"><div class="island"></div>
+      <div class="sbar light"><span>9:00</span><span class="ic">●●● ▮</span></div>
+      <div class="view dark" style="justify-content:space-between;background:linear-gradient(180deg,#1b2340,#121212)">
+        <div class="call-top" style="padding-top:70px"><div class="call-av" style="width:96px;height:96px;font-size:34px">K<span class="ring" id="s4r1"></span><span class="ring" id="s4r2"></span></div><p class="call-name" style="margin-top:14px;font-size:28px">KeepFit AI 코치</p><p class="call-sub">한빛의원 · 저녁 체크인</p></div>
+        <div class="acceptrow"><div><i style="background:#D23B2E"><svg width="32" height="32" viewBox="0 0 24 24" fill="#fff"><path d="M3 15c5-5 13-5 18 0l-2.5 2.5-3-1.5v-2.5a10 10 0 0 0-5 0V16l-3 1.5z"/></svg></i>거절</div><div><i style="background:#2FA75A" id="s4acc"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></i>받기</div></div>
+      </div>
+    </div></div>
+    <div class="abs" style="left:1240px;top:430px;font-size:34px;font-weight:700;line-height:1.45" id="s4ringtx">저녁 9시,<br>다은 님 휴대폰이 울려요</div>
+  </div>
+</section>
+
+<!-- ========== S5 · 핵심 통화 ========== -->
+<section class="scene" id="s5">
+  <div class="kicker"><i>단약 3주차</i>말만 하면 기록이 돼요</div>
+  <div class="phone" style="left:150px;top:150px"><div class="scr"><div class="island"></div>
+    <div class="sbar light"><span>9:00</span><span class="ic">●●● ▮</span></div>
+    <div class="view dark" data-v="ring" style="justify-content:space-between;background:linear-gradient(180deg,#1b2340,#121212)">
+      <div class="call-top" style="padding-top:70px"><div class="call-av" style="width:96px;height:96px;font-size:34px">K<span class="ring" id="s5r1"></span></div><p class="call-name" style="margin-top:14px;font-size:28px">KeepFit AI 코치</p><p class="call-sub">한빛의원 · 저녁 체크인</p></div>
+      <div class="acceptrow"><div><i style="background:#D23B2E"><svg width="32" height="32" viewBox="0 0 24 24" fill="#fff"><path d="M3 15c5-5 13-5 18 0l-2.5 2.5-3-1.5v-2.5a10 10 0 0 0-5 0V16l-3 1.5z"/></svg></i>거절</div><div><i style="background:#2FA75A" id="s5acc"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></i>받기</div></div>
+    </div>
+    <div class="view dark" data-v="talk" style="gap:12px">
+      <div class="call-top" style="flex-direction:row;gap:12px;justify-content:center;padding-top:4px"><div class="call-av" style="width:48px;height:48px;font-size:18px">K</div><div><p class="call-name" style="font-size:20px">AI 코치</p><p class="call-sub" id="s5timer" style="font-size:14px">통화 중 · 0:00</p></div></div>
+      <div class="log"><div class="inner" id="s5log"></div></div>
+      <div class="speak" id="s5speak"><div class="bars" id="s5bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span id="s5who">AI 코치</span></div>
+      <div class="endbtn" id="s5end"><svg width="30" height="30" viewBox="0 0 24 24" fill="#fff"><path d="M3 15c5-5 13-5 18 0l-2.5 2.5-3-1.5v-2.5a10 10 0 0 0-5 0V16l-3 1.5z"/></svg></div>
+    </div>
+    <div class="view dark" data-v="ended" style="align-items:center;justify-content:center;gap:14px;text-align:center">
+      <div style="width:84px;height:84px;border-radius:50%;background:#2FA75A;display:grid;place-items:center"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <p style="font-size:26px;font-weight:700">통화 끝 · 1분 58초</p>
+      <p style="font-size:17px;color:#bdbdb8;line-height:1.6">따로 입력할 건 없어요.<br>원장님이 확인하면 앱으로 알려드릴게요.</p>
+    </div>
+  </div></div>
+  <div class="reccard" id="s5rec">
+    <div class="rh"><div><b>오늘 통화에서 기록된 것</b><small>정다은 · 단약 3주차 (27주) · 10월 12일 저녁 9:00 AI 전화</small></div><span class="pill gray dot" id="s5state">통화 중 · 듣는 중</span></div>
+    <div class="rgrid">
+      <div class="rf" data-f="weight"><span class="l">체중</span><span class="ph">—</span><span class="v" hidden>71.4<small>kg</small></span><span class="s" hidden>지난주 70.6 → <b>+0.8kg</b><br>투약 종료 후 <b>+1.4kg</b></span></div>
+      <div class="rf" data-f="appetite"><span class="l">식욕 (0–10)</span><span class="ph">—</span><span class="v" hidden>8<small>/10</small></span><span class="s" hidden>지난주 6 · 투약 중 평균 3</span></div>
+      <div class="rf" data-f="snack"><span class="l">야식</span><span class="ph">—</span><span class="v" hidden>3<small>회 / 이번 주</small></span><span class="s" hidden>저녁 식욕 상승과 함께</span></div>
+      <div class="rf" data-f="sleep"><span class="l">수면</span><span class="ph">—</span><span class="v" hidden>5<small>시간</small></span><span class="s" hidden>야근 · 수면 부족은 식욕을 키워요</span></div>
+      <div class="rf" data-f="strength"><span class="l">근력 운동</span><span class="ph">—</span><span class="v" hidden>0<small>회 / 이번 주</small></span><span class="s" hidden>목표 주 2회</span></div>
+      <div class="rf" data-f="said"><span class="l">다은 님이 한 말</span><span class="ph">—</span><span class="qv" hidden>“약 끊고 나서 저녁만 되면 너무 배고파요”</span><span class="s" hidden>원문 그대로 차트에 저장</span></div>
+    </div>
+    <div class="rules">
+      <small>원장님이 정한 확인 기준 · 단약 후 관리</small>
+      <div class="rule" data-r="1"><span class="bx"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>단약 후 체중 +1kg 이상</span><span class="rv">+1.4kg</span></div>
+      <div class="rule" data-r="2"><span class="bx"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>식욕 7 이상 · 지난주보다 상승</span><span class="rv">8 (+2)</span></div>
+      <div class="rule" data-r="3"><span class="bx"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span>근력 운동 주 1회 미만</span><span class="rv">0회</span></div>
+    </div>
+    <div class="verdict" id="s5verdict"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg><div>원장님 확인 필요 · 단약 후 식욕 반등 신호<small>기준 3개 해당 → 오늘 기록과 함께 원장님 대시보드로 전달</small></div></div>
+    <div class="aiwont" id="s5wont"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16v.5"/></svg>AI는 진단·처방하지 않아요. 묻고, 기록하고, 원장님께 전달까지만 해요.</div>
+  </div>
+</section>
+
+<!-- ========== S6 · 대시보드 위험 알림 → 내원 요청 ========== -->
+<section class="scene" id="s6">
+  <div class="kicker"><i>원장님</i>확인이 필요한 환자만 위로 올라와요</div>
+  <div class="win" style="left:80px;top:120px;width:1760px;height:920px">
+    <div class="chrome"><i></i><i></i><i></i><div class="url" id="s6url">keepfit.app/clinic · 오늘 확인할 환자</div></div>
+    <div class="dash">
+      <div class="dside" data-side="list"></div>
+      <div class="dmain">
+        <div id="s6listv" class="abs" style="left:30px;right:30px;top:26px;bottom:26px;display:flex;flex-direction:column;gap:16px">
+          <div class="between"><div><p class="dh1">오늘 확인할 환자</p><p class="dsub">AI 전화 기록을 원장님 기준으로 자동 분류해요 · 10월 12일 (월)</p></div><div class="row"><span class="pill danger dot" id="s6need">확인 필요 0명</span><span class="pill gray">안정 127명</span></div></div>
+          <div class="dcard" style="padding:0;gap:0">
+            <div class="thead"><span>환자</span><span>단계</span><span>최근 AI 전화 기록</span><span>상태</span></div>
+            <div class="ptable" id="s6rows" style="position:relative"></div>
+          </div>
+        </div>
+        <div id="s6chartv" class="abs" style="left:30px;right:30px;top:26px;bottom:26px;display:flex;flex-direction:column;gap:14px">
+          <div class="between"><div><p class="dh1">정다은 <span style="font-weight:500;color:var(--muted);font-size:18px">34세 · 위고비 24주 → 9/21 투약 종료</span></p><p class="dsub">첫 처방 4/6 · 82.0kg → 70.0kg (−12kg) · 진료 사이 AI 전화 46회</p></div><div class="row"><span class="pill warn">단약 3주차</span><span class="pill danger dot">확인 필요</span></div></div>
+          <div style="display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:14px;flex:1;min-height:0">
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+              <div class="dcard" style="gap:6px"><h3>체중 · 첫 처방부터 <span class="small">주 단위 · AI 전화 기록</span></h3><svg id="s6w" viewBox="0 0 900 290" style="width:100%;height:290px"></svg></div>
+              <div class="dcard" style="gap:6px"><h3>식욕 (0–10) <span class="small">기준선 7</span></h3><svg id="s6a" viewBox="0 0 900 150" style="width:100%;height:150px"></svg></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:14px;min-width:0;position:relative">
+              <div class="dcard" id="s6sum">
+                <h3>AI 전화 요약 <span class="small">10/12 저녁 9:00 · 1분 58초</span></h3>
+                <div class="tiles4" style="grid-template-columns:repeat(2,1fr)">
+                  <div class="tl4 mid"><span class="l">체중</span><span class="v">71.4<small>kg</small></span><span class="s">단약 후 +1.4kg</span></div>
+                  <div class="tl4 bad"><span class="l">식욕</span><span class="v">8<small>/10</small></span><span class="s">지난주 6 → 8</span></div>
+                  <div class="tl4"><span class="l">야식 · 수면</span><span class="v">3<small>회</small> · 5<small>시간</small></span><span class="s">이번 주 · 야근</span></div>
+                  <div class="tl4 mid"><span class="l">근력 운동</span><span class="v">0<small>회</small></span><span class="s">목표 주 2회</span></div>
+                </div>
+                <div class="quote"><small>환자가 한 말 (원문)</small>“약 끊고 나서 저녁만 되면 너무 배고파요. 이번 주에 야식을 세 번 먹었어요.”</div>
+                <div class="checks"><div><span class="bk">확인</span>단약 3주차 식욕 반등 · 저녁 시간대 집중</div><div><span class="bk">확인</span>수면 5시간 · 근력 운동 중단 → 근손실 위험</div></div>
+                <div class="row" style="gap:10px"><div class="dbtn" id="s6req" style="flex:1">내원 요청 보내기</div><div class="dbtn ghost" style="flex:1">통화 원문 보기</div></div>
+              </div>
+              <div class="dcard" id="s6sheet" style="position:absolute;left:0;right:0;bottom:0;border:1.5px solid var(--accent);box-shadow:0 -10px 40px rgba(0,0,0,.1)">
+                <h3>내원 요청 <span class="small">환자 앱으로 바로 가요</span></h3>
+                <div><p class="small" style="margin-bottom:8px;font-weight:600">진료 가능한 시간</p><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="s6slots"><div class="slot">10/14 (수)<br>오후 7:00</div><div class="slot">10/15 (목)<br>오후 7:30</div><div class="slot">10/17 (토)<br>오전 10:00</div></div></div>
+                <div><p class="small" style="margin-bottom:8px;font-weight:600">상용구</p><div class="row" style="flex-wrap:wrap;gap:8px"><span class="tagc" id="s6tag">단약 후 식욕 반등 상담</span><span class="tagc">근력 운동 재개</span><span class="tagc">인바디 측정</span></div></div>
+                <div class="quote" style="min-height:76px"><small>환자에게 보낼 메시지</small><span id="s6msg"></span></div>
+                <div class="dbtn" id="s6send">보내기</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== S7 · 환자 앱 내원 예약 ========== -->
+<section class="scene" id="s7">
+  <div class="kicker"><i>환자</i>기록할 필요 없이, 안내만 받으면 돼요</div>
+  <div class="side-label" style="left:72px;top:118px"><b>병원 대시보드</b> · 정다은</div>
+  <div class="side-label" style="left:1410px;top:118px"><b>환자 앱</b> · 정다은</div>
+  <div class="win" style="left:72px;top:150px;width:1220px;height:860px">
+    <div class="chrome"><i></i><i></i><i></i><div class="url">keepfit.app/clinic · 정다은</div></div>
+    <div class="dash">
+      <div class="dside" data-side="list"></div>
+      <div class="dmain">
+        <div class="between"><div><p class="dh1">정다은 <span style="font-weight:500;color:var(--muted);font-size:18px">34세 · 단약 3주차</span></p><p class="dsub">10/12 AI 전화 · 식욕 8/10 · 체중 71.4kg (단약 후 +1.4kg)</p></div><span class="pill warn">단약 3주차</span></div>
+        <div class="dcard">
+          <h3>내원 요청</h3>
+          <div style="display:grid;gap:0" id="s7steps"></div>
+        </div>
+        <div class="dcard">
+          <h3>이번 주 진료 일정</h3>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px" id="s7week"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="phone" style="left:1410px;top:150px"><div class="scr"><div class="island"></div>
+    <div class="sbar"><span>9:24</span><span class="ic">●●● ▮</span></div>
+    <div class="view" data-v="home">
+      <p class="small" style="font-size:14px">한빛의원 · 단약 3주차</p>
+      <p class="h1">다은 님, 좋은 저녁이에요</p>
+      <div class="card"><div class="between"><b style="font-size:16px">오늘 AI 코치 통화</b><span class="pill ok dot">완료</span></div><p class="small">체중·식욕·수면·운동이 원장님 차트에 기록됐어요</p></div>
+      <div class="card">
+        <b style="font-size:16px">나의 치료 단계</b>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"><div style="height:8px;border-radius:4px;background:var(--band)"></div><div style="height:8px;border-radius:4px;background:var(--band)"></div><div style="height:8px;border-radius:4px;background:var(--warn-bar)"></div></div>
+        <div class="between small"><span>투약 · 감량</span><span>단약 준비</span><span style="color:var(--warn-dark);font-weight:600">단약 후 유지</span></div>
+      </div>
+      <div class="card"><b style="font-size:16px">다음 AI 코치 전화</b><p class="small">목요일 저녁 9:00</p></div>
+    </div>
+    <div class="notif" id="s7notif"><div class="ap">K</div><div class="tx"><b>한빛의원 · KeepFit <span>지금</span></b>원장님이 오늘 통화 내용을 확인했어요. 이번 주 내원을 요청드려요.</div></div>
+    <div class="view" data-v="alert">
+      <div style="width:52px;height:52px;border-radius:14px;background:var(--warn-tint);display:grid;place-items:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#B4500B" stroke-width="1.8" stroke-linecap="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg></div>
+      <p class="h1">원장님이 상태를<br>확인하고 있어요</p>
+      <div class="card warn" style="gap:8px">
+        <b style="color:var(--warn-dark);font-size:15px">오늘 통화에서 확인된 것</b>
+        <div class="between" style="font-size:15px"><span>식욕</span><b>8 / 10 (지난주 6)</b></div>
+        <div class="between" style="font-size:15px"><span>단약 후 체중</span><b>+1.4kg</b></div>
+      </div>
+      <div class="card" style="flex-direction:row;gap:12px">
+        <div class="logo" style="width:36px;height:36px">원</div>
+        <div><small class="small">원장님 메시지</small><p style="font-size:15px;line-height:1.55">약 끊은 뒤 식욕이 오르는 건 흔해요. 지금 잡으면 충분해요. 이번 주에 한번 들러 주세요.</p></div>
+      </div>
+      <p style="font-size:15px;font-weight:700">가능한 시간</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px" id="s7slots"><div class="slot">10/14 (수)<br>오후 7:00</div><div class="slot">10/15 (목)<br>오후 7:30</div><div class="slot">10/17 (토)<br>오전 10:00</div></div>
+      <div class="grow"></div>
+      <div class="btn" id="s7book">예약하기</div>
+    </div>
+    <div class="view" data-v="done" style="align-items:center;justify-content:center;text-align:center;gap:14px">
+      <div style="width:88px;height:88px;border-radius:50%;background:var(--accent);display:grid;place-items:center"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <p class="h1">예약됐어요</p>
+      <div class="card" style="width:100%;text-align:left">
+        <div class="between" style="font-size:16px"><span class="small" style="font-size:15px">일시</span><b>10/15 (목) 오후 7:30</b></div>
+        <div class="between" style="font-size:16px"><span class="small" style="font-size:15px">병원</span><b>한빛의원</b></div>
+        <div class="between" style="font-size:16px"><span class="small" style="font-size:15px">진료</span><b>단약 후 점검</b></div>
+      </div>
+      <p class="small" style="font-size:15px">진료 전날 앱으로 다시 알려드릴게요</p>
+    </div>
+  </div></div>
+</section>
+
+<!-- ========== S8 · 엔딩 ========== -->
+<section class="scene" id="s8">
+  <div class="abs" id="s8end" style="left:0;right:0;top:0;bottom:0;background:var(--ground);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px">
+    <div class="row" style="gap:18px"><div class="logo" style="width:84px;height:84px;font-size:40px;border-radius:24px">K</div><b style="font-size:72px;letter-spacing:-.02em">KeepFit</b></div>
+    <p style="font-size:34px;font-weight:600;color:var(--muted)">첫 처방일부터, 진료와 진료 사이를 AI 전화로 채워요</p>
+  </div>
+</section>
+
+<div id="fx"><svg id="fxsvg"></svg><div id="fxhtml"></div></div>
+<svg id="cursor" viewBox="0 0 24 24"><path d="M4 2l15 11.5-6.5 1L16 22l-3 1.3-3.6-7.6L4 20z" fill="#111" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+<div id="click"></div>
+</div>
+
+<div id="hud">
+  <b>KeepFit 촬영</b>
+  <div class="sc" id="hudsc"></div>
+  <button id="hplay">▶ 재생</button>
+  <span id="htime" style="font-variant-numeric:tabular-nums;min-width:120px"></span>
+  <div class="bar" id="hbar"><i id="hprog"></i></div>
+  <button id="hall" title="모든 장면 이어서 재생">전체 이어보기</button>
+  <span class="keys">Space 재생/정지 · ←/→ 이전/다음 단계 · 1–8 장면 · R 처음 · H 숨기기 · F 전체화면</span>
+</div>
+
+<script>
+/* ============================== engine ============================== */
+const W = 1920, H = 1080
+const $ = (s, r = document) => r.querySelector(s)
+const $$ = (s, r = document) => [...r.querySelectorAll(s)]
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+const eo = (x) => 1 - Math.pow(1 - x, 3)
+const eio = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2)
+const P = (t, a, d = 0.5, e = eo) => e(clamp((t - a) / d))
+const lerp = (a, b, k) => a + (b - a) * k
+const stage = $('#stage')
+let SCALE = 1
+
+// fade + rise in at `a`, fade out at `out`
+function vis(el, t, a, d = 0.45, out = Infinity, dy = 14) {
+  if (!el) return 0
+  const i = P(t, a, d), o = 1 - P(t, out, 0.35), v = Math.min(i, o)
+  el.style.opacity = v
+  el.style.transform = dy ? `translateY(${((1 - i) * dy).toFixed(2)}px)` : ''
+  el.style.visibility = v <= 0.001 ? 'hidden' : 'visible'
+  return v
+}
+function on(el, v) { if (el) el.style.visibility = v ? 'visible' : 'hidden' }
+// type text into el between a and a+dur
+function type(el, text, t, a, dur) {
+  const n = Math.round(clamp((t - a) / dur) * text.length)
+  el.textContent = text.slice(0, n)
+  return n >= text.length
+}
+// one view visible at a time, crossfading with a small slide; list = [[t,'name'], ...]
+function views(root, t, list, d = 0.35) {
+  const els = Object.fromEntries($$('[data-v]', root).map((v) => [v.dataset.v, v]))
+  let cur = 0
+  list.forEach((x, i) => { if (t >= x[0]) cur = i })
+  for (const k in els) { els[k].style.visibility = 'hidden'; els[k].style.opacity = 0 }
+  const [ct, cn] = list[cur], k = P(t, ct, d, eio)
+  const el = els[cn]; el.style.visibility = 'visible'; el.style.opacity = cur === 0 ? 1 : k
+  el.style.transform = cur === 0 ? '' : `translateX(${((1 - k) * 40).toFixed(1)}px)`; el.style.zIndex = 2
+  if (cur > 0 && k < 1) { const pv = els[list[cur - 1][1]]; pv.style.visibility = 'visible'; pv.style.opacity = 1; pv.style.transform = ''; pv.style.zIndex = 1 }
+  return cn
+}
+function pos(el, ax = 0.5, ay = 0.5) {
+  const r = el.getBoundingClientRect(), s = stage.getBoundingClientRect()
+  return [(r.left - s.left) / SCALE + (r.width / SCALE) * ax, (r.top - s.top) / SCALE + (r.height / SCALE) * ay]
+}
+const resolve = (x) => (typeof x === 'string' ? $(x) : typeof x === 'function' ? x() : x)
+const pt = (x) => (Array.isArray(x) ? x : pos(resolve(x)))
+
+/* --- overlays: mouse cursor, phone taps, data beams, flying chips --- */
+const fxsvg = $('#fxsvg'), fxhtml = $('#fxhtml'), cursor = $('#cursor'), clickEl = $('#click')
+function drawMouse(t, track) {
+  cursor.style.opacity = 0; clickEl.style.opacity = 0
+  if (!track || !track.length) return
+  const first = track[0], last = track[track.length - 1]
+  if (t < first.t - 0.5 || t > (last.hide ?? Infinity)) return
+  let p
+  if (t <= first.t) p = pt(first.at)
+  else {
+    let i = 0
+    while (i < track.length - 1 && t >= track[i + 1].t) i++
+    if (i === track.length - 1) p = pt(last.at)
+    else {
+      const a = track[i], b = track[i + 1], mv = Math.min(0.75, (b.t - a.t) * 0.85)
+      const k = eio(clamp((t - (b.t - mv)) / mv)), pa = pt(a.at), pb = pt(b.at)
+      p = [lerp(pa[0], pb[0], k), lerp(pa[1], pb[1], k) - Math.sin(k * Math.PI) * 30]
+    }
+  }
+  cursor.style.opacity = clamp((t - first.t + 0.5) / 0.3)
+  let press = 0
+  for (const k of track) if (k.click && t >= k.t && t < k.t + 0.55) {
+    const q = (t - k.t) / 0.55
+    clickEl.style.opacity = 1 - q
+    clickEl.style.transform = `scale(${0.4 + q * 1.2})`
+    const cp = pt(k.at); clickEl.style.left = cp[0] + 'px'; clickEl.style.top = cp[1] + 'px'
+    press = q < 0.3 ? 1 : 0
+  }
+  cursor.style.transform = `translate(${p[0] - 6}px,${p[1] - 3}px) scale(${press ? 0.88 : 1})`
+}
+// taps: [{t, at}] — a finger press ring on the phone
+function drawTaps(t, taps, root) {
+  $$('.tap', root).forEach((x) => x.remove())
+  for (const k of taps || []) {
+    if (t < k.t - 0.25 || t > k.t + 0.5) continue
+    const el = document.createElement('div'); el.className = 'tap'
+    const p = pt(k.at), s = stage
+    el.style.left = p[0] + 'px'; el.style.top = p[1] + 'px'
+    const pre = clamp((t - (k.t - 0.25)) / 0.25), post = clamp((t - k.t) / 0.5)
+    el.style.opacity = t < k.t ? pre : 1 - post
+    el.style.transform = `scale(${t < k.t ? 1.25 - pre * 0.3 : 0.95 + post * 0.6})`
+    fxhtml.appendChild(el)
+  }
+}
+// beams: [{from, to, t, d, label, warn, bend}] — a dot carrying a label from one screen to the other
+function drawBeams(t, beams) {
+  for (const b of beams || []) {
+    const d = b.d ?? 1.3, hold = b.hold ?? 0.9
+    if (t < b.t - 0.05 || t > b.t + d + hold + 0.4) continue
+    const p0 = pt(b.from), p1 = pt(b.to)
+    const dx = p1[0] - p0[0], bend = b.bend ?? -120
+    const c1 = [p0[0] + dx * 0.3, p0[1] + bend], c2 = [p1[0] - dx * 0.3, p1[1] + bend]
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    path.setAttribute('d', `M${p0} C${c1} ${c2} ${p1}`)
+    const col = b.warn ? '#B42318' : '#2F5BD3'
+    const fade = 1 - clamp((t - (b.t + d + hold)) / 0.4)
+    path.setAttribute('fill', 'none'); path.setAttribute('stroke', col); path.setAttribute('stroke-width', 3)
+    path.setAttribute('stroke-dasharray', '2 9'); path.setAttribute('stroke-linecap', 'round'); path.setAttribute('opacity', 0.65 * fade)
+    fxsvg.appendChild(path)
+    const k = eio(clamp((t - b.t) / d)), L = path.getTotalLength(), q = path.getPointAtLength(L * k)
+    // solid trail
+    const trail = path.cloneNode(); trail.setAttribute('stroke-dasharray', `${L * k} ${L}`); trail.setAttribute('opacity', fade); trail.setAttribute('stroke-width', 4)
+    fxsvg.appendChild(trail)
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+    dot.setAttribute('cx', q.x); dot.setAttribute('cy', q.y); dot.setAttribute('r', 9); dot.setAttribute('fill', col); dot.setAttribute('opacity', fade)
+    fxsvg.appendChild(dot)
+    if (k >= 1) { // arrival ring
+      const r = clamp((t - b.t - d) / 0.6), ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+      ring.setAttribute('cx', p1[0]); ring.setAttribute('cy', p1[1]); ring.setAttribute('r', 10 + r * 34)
+      ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', col); ring.setAttribute('stroke-width', 3); ring.setAttribute('opacity', (1 - r) * fade)
+      fxsvg.appendChild(ring)
+    }
+    if (b.label) {
+      const chip = document.createElement('div'); chip.className = 'beam-chip' + (b.warn ? ' warn' : '')
+      chip.innerHTML = b.label
+      chip.style.left = q.x + 'px'; chip.style.top = q.y + 'px'; chip.style.opacity = fade * clamp((t - b.t) / 0.2)
+      fxhtml.appendChild(chip)
+    }
+  }
+}
+// flying chip from a highlighted phrase to a record field
+function drawFly(t, f) {
+  if (t < f.t || t > f.t + f.d + 0.15) return
+  const k = eio(clamp((t - f.t) / f.d)), p0 = pt(f.from), p1 = pt(f.to)
+  const el = document.createElement('div'); el.className = 'fly'; el.textContent = f.text
+  const x = lerp(p0[0], p1[0], k), y = lerp(p0[1], p1[1], k) - Math.sin(k * Math.PI) * 110
+  el.style.left = x + 'px'; el.style.top = y + 'px'
+  el.style.opacity = t > f.t + f.d ? 1 - (t - f.t - f.d) / 0.15 : clamp((t - f.t) / 0.12)
+  el.style.transform = `translate(-50%,-50%) scale(${1 + Math.sin(k * Math.PI) * 0.12})`
+  fxhtml.appendChild(el)
+}
+
+/* --- shared bits --- */
+const ICON = {
+  moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  nogym: '<path d="M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12"/><path d="M4 4l16 16"/>',
+  scale: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M9 10a3 3 0 0 1 6 0"/><path d="M12 10l1.2-1.6"/>',
+  bed: '<path d="M3 18V8M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6"/>',
+  phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+  bowl: '<path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M9 7c0-1.5 1-2 1-3.5M14 7c0-1.5 1-2 1-3.5"/>',
+  muscle: '<path d="M7 14c-2 0-3-1.5-3-3s1.5-3 3-3c1 0 1.5.5 2 1l2-4 3 1-1 4c3 0 6 2 6 5a5 5 0 0 1-5 5H9c-1.5 0-2-1-2-2z"/>',
+  stetho: '<path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v3a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/>',
+}
+const ico = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg>`
+const NAV = [['list', '오늘 확인할 환자', '<path d="M4 6h16M4 12h16M4 18h10"/>'], ['chart', '진료실 차트', '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>'], ['new', '환자 등록', '<circle cx="10" cy="8" r="4"/><path d="M3 20c1-4 4-6 7-6M17 13v6M14 16h6"/>'], ['cal', '예약 일정', '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'], ['inbox', '문의함', '<path d="M4 4h16v12H8l-4 4z"/>']]
+function sidebar(el) {
+  const cur = el.dataset.side
+  el.innerHTML = `<div class="brand"><div class="logo">K</div><div><b>KeepFit</b><small>한빛의원 · 비만 클리닉</small></div></div>
+  <nav class="dnav">${NAV.map(([k, l, p]) => `<div class="${k === cur ? 'on' : ''}" data-nav="${k}"><svg viewBox="0 0 24 24">${p}</svg>${l}${k === 'list' ? '<span class="cnt" data-cnt style="display:none">1</span>' : ''}</div>`).join('')}</nav>
+  <div style="margin-top:auto;display:flex;gap:10px;align-items:center;font-size:13px;padding:0 6px"><div style="width:32px;height:32px;border-radius:50%;background:var(--accent-tint);display:grid;place-items:center;color:var(--accent-dark);font-weight:700">원</div><div><b>원장</b><div class="small" style="font-size:12px">관리자</div></div></div>`
+}
+$$('[data-side]').forEach(sidebar)
+
+// 정다은 weekly data (0–27주). 24주 투약 종료 · 27주 = 오늘
+const WT = [82.0, 81.3, 80.6, 80.0, 79.4, 78.9, 78.3, 77.8, 77.2, 76.6, 75.8, 75.3, 74.8, 74.3, 73.9, 73.5, 73.0, 72.6, 72.1, 71.7, 71.3, 71.0, 70.6, 70.3, 70.0, 70.3, 70.6, 71.4]
+const AP = [6, 4, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 3, 3, 5, 6, 8]
+
+/* ============================== scenes ============================== */
+const SCENES = []
+
+/* ---------- S1 · 진료와 진료 사이 (18s) ---------- */
+{
+  const grid = $('#s1grid')
+  const DOW = ['월', '화', '수', '목', '금', '토', '일']
+  const LIFE = { 3: ['bowl', '속 안 좋아<br>끼니 거름'], 6: ['nogym', '근력 운동<br>안 함'], 9: ['bowl', '메스꺼워<br>점심 거름'], 12: ['muscle', '−0.8kg<br>근육도 ↓'], 14: ['nogym', '근력 운동<br>안 함'], 17: ['bowl', '저녁<br>거름'], 20: ['nogym', '근력 운동<br>안 함'], 22: ['muscle', '−0.7kg<br>근육도 ↓'], 25: ['bowl', '끼니<br>거름'], 27: ['muscle', '−0.6kg<br>근육도 ↓'] }
+  grid.innerHTML = DOW.map((d) => `<div class="dow">${d}</div>`).join('') +
+    Array.from({ length: 35 }, (_, i) => {
+      const day = i + 1
+      if (day > 30) return '<div class="cell empty"></div>'
+      if (day === 1 || day === 29) return `<div class="cell visit" data-d="${day}">${day}<span class="ev">${ico('stetho')}진료</span></div>`
+      const l = LIFE[day]
+      return `<div class="cell" data-d="${day}">${day}${l ? `<span class="ev life" data-life>${ico(l[0])}${l[1]}</span>` : ''}</div>`
+    }).join('')
+  const lifeEls = $$('[data-life]', grid)
+  SCENES.push({
+    id: 's1', title: '진료와 진료 사이', dur: 18, cues: [0, 1.5, 3.4, 5, 11, 13],
+    render(t) {
+      const cal = $('#s1cal')
+      vis(cal, t, 0, 0.6)
+      // visits pop
+      $$('.cell.visit', grid).forEach((c) => { const k = P(t, 1.4, 0.5); c.style.transform = `scale(${1 + Math.sin(k * Math.PI) * 0.08})`; c.style.background = k > 0 ? '' : 'var(--bg)'; c.style.color = k > 0 ? '' : 'var(--muted)'; c.querySelector('.ev').style.opacity = k })
+      // blank days dim → life events appear
+      lifeEls.forEach((e, i) => vis(e, t, 5 + i * 0.5, 0.35, Infinity, 8))
+      // calendar: centered, then shrinks to the left when the stat arrives
+      const sk = P(t, 11, 0.9, eio), cw = cal.offsetWidth, ch = cal.offsetHeight
+      const x0 = (W - cw) / 2, y0 = 150, x1 = 72, y1 = 200, sc = lerp(1, 0.96 * 840 / cw, sk)
+      cal.style.left = lerp(x0, x1, sk) + 'px'; cal.style.top = lerp(y0, y1, sk) + 'px'
+      cal.style.transform = `translateY(${((1 - P(t, 0, 0.6)) * 14).toFixed(1)}px) scale(${sc})`
+      const al = $('#s1alone'); al.style.opacity = P(t, 3.4, 0.6) * (1 - sk); al.style.transform = `translateY(${(1 - P(t, 3.4, 0.6)) * 12}px)`
+      $$('.cell:not(.visit):not(.empty)', grid).forEach((c) => (c.style.background = t > 3.4 ? `rgb(${lerp(244, 250, P(t, 3.4, 0.6))},${lerp(244, 238, P(t, 3.4, 0.6))},${lerp(242, 230, P(t, 3.4, 0.6))})` : ''))
+      // stat card + regain curve
+      const st = $('#s1stat'); vis(st, t, 11.4, 0.6, Infinity, 20)
+      const svg = $('#s1chart'), dk = P(t, 12.4, 3.6, (x) => x)
+      // weight lost 0 → -15% by week 68, then regain 2/3 over 52 weeks (STEP 1 extension shape)
+      const pts = []
+      for (let i = 0; i <= 120; i++) { const x = i; const y = x <= 68 ? -15 * (1 - Math.pow(1 - x / 68, 1.8)) : -15 + 10 * (1 - Math.pow(1 - (x - 68) / 52, 1.6)); pts.push([30 + (x / 120) * 680, 30 + (-y / 16) * 230]) }
+      const n = Math.max(2, Math.round(pts.length * dk))
+      svg.innerHTML = `<line x1="30" y1="30" x2="710" y2="30" stroke="#D6D6D2" stroke-dasharray="4 5"/>
+        <text x="30" y="20" font-size="15" fill="#9A9A95">시작 체중</text>
+        <line x1="${30 + 68 / 120 * 680}" y1="20" x2="${30 + 68 / 120 * 680}" y2="290" stroke="#1A1A1A" stroke-width="2" stroke-dasharray="5 5" opacity="${P(t, 12.4 + 2, 0.4)}"/>
+        <text x="${30 + 68 / 120 * 680 + 10}" y="290" font-size="16" font-weight="600" fill="#1A1A1A" opacity="${P(t, 14.4, 0.4)}">약 중단</text>
+        <polyline points="${pts.slice(0, Math.min(n, 70)).map((p) => p.join(',')).join(' ')}" fill="none" stroke="#2F5BD3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        ${n > 69 ? `<polyline points="${pts.slice(68, n).map((p) => p.join(',')).join(' ')}" fill="none" stroke="#B42318" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+        <text x="40" y="270" font-size="18" font-weight="600" fill="#2F5BD3" opacity="${P(t, 13.2, 0.4)}">투약 중 감량</text>
+        <g opacity="${P(t, 15.6, 0.5)}"><text x="710" y="${pts[120][1] - 18}" font-size="19" font-weight="700" fill="#B42318" text-anchor="end">1년 뒤 2/3 회복</text></g>`
+    },
+  })
+}
+
+/* ---------- S2 · 첫 처방일 등록 (14s) ---------- */
+{
+  const list = $('#s2list')
+  const ROWS = [['정다은', '34세 · 위고비', 'new'], ['이서연', '41세 · 마운자로', '투약 12주차'], ['박지훈', '38세 · 위고비', '투약 20주차'], ['최유나', '29세 · 위고비', '단약 2개월'], ['한도윤', '45세 · 마운자로', '투약 5주차'], ['오세린', '33세 · 위고비', '단약 4개월']]
+  list.innerHTML = ROWS.map(([n, m, s], i) => `<div class="between" data-row="${i}" style="padding:13px 18px;border-top:1px solid var(--div);background:var(--surface)"><div><b style="font-size:16px">${n}</b> <span class="small">${m}</span></div>${s === 'new' ? '<span class="pill gray dot" data-st>초대 보냄</span>' : `<span class="pill info">${s}</span>`}</div>`).join('')
+  const root = $('#s2'), ins = $$('[data-type]', root), newRow = $('[data-row="0"]', list), st = $('[data-st]', newRow)
+  const typeAt = [0.8, 1.5, 2.1, 3.0, 3.6, 4.2]
+  SCENES.push({
+    id: 's2', title: '첫 처방일 등록', dur: 14, cues: [0, 0.8, 5.4, 7.4, 9.0, 11.2, 13],
+    mouse: [{ t: 0.4, at: () => ins[0] }, { t: 3.0, at: () => ins[3] }, { t: 4.7, at: '#s2reg' }, { t: 5.4, at: '#s2reg', click: true, hide: 6.6 }],
+    taps: [{ t: 8.6, at: '#s2notif' }, { t: 10.9, at: '#s2start' }],
+    beams: [{ from: '#s2reg', to: '#s2notif', t: 5.7, d: 1.4, label: '앱 초대 + 처방 정보' }, { from: () => $('#s2 [data-v="home"] .card:last-child'), to: () => st, t: 11.3, d: 1.3, label: '앱 연결됨', bend: -160 }],
+    render(t) {
+      ins.forEach((el, i) => { type(el, el.dataset.type, t, typeAt[i], 0.5); el.classList.toggle('focus', t >= typeAt[i] && t < (typeAt[i + 1] ?? 4.8)) })
+      const reg = $('#s2reg'); reg.style.transform = t >= 5.4 && t < 5.6 ? 'scale(.97)' : ''
+      reg.textContent = t >= 5.6 ? '✓ 등록 완료 · 초대 문자 보냄' : '프로그램 등록 · 앱 초대 보내기'
+      reg.style.background = t >= 5.6 ? 'var(--ok)' : ''
+      // new row slides in
+      const k = P(t, 5.6, 0.5)
+      newRow.style.display = k > 0 ? '' : 'none'
+      newRow.style.opacity = k; newRow.style.background = t > 5.6 ? `rgba(233,238,251,${1 - P(t, 7, 1)})` : ''
+      if (t >= 12.6) { st.className = 'pill ok dot'; st.textContent = '앱 연결 · 투약 1주차'; newRow.style.background = `rgba(229,243,236,${1 - P(t, 13.4, 1)})` } else { st.className = 'pill gray dot'; st.textContent = '초대 보냄' }
+      // phone
+      const v = views(root, t, [[0, 'lock'], [8.8, 'invite'], [11.1, 'home']])
+      const sb = $('[data-sbar]', root); sb.classList.toggle('light', v === 'lock'); sb.firstElementChild.textContent = '2:20'
+      const nt = $('#s2notif'); const nk = P(t, 7.1, 0.45), no = P(t, 8.8, 0.3)
+      nt.style.opacity = nk * (1 - no); nt.style.transform = `translateY(${(1 - nk) * -40}px) scale(${t >= 8.5 && t < 8.8 ? 0.98 : 1})`; on(nt, nk * (1 - no) > 0)
+    },
+  })
+}
+
+/* ---------- S3 · 투약 중 통화 몇 컷 (15s) ---------- */
+{
+  const grid = $('#s3grid')
+  const DOW = ['월', '화', '수', '목', '금', '토', '일']
+  const CALLS = [3, 6, 10, 13, 17, 20, 24, 27]
+  grid.innerHTML = DOW.map((d) => `<div class="dow">${d}</div>`).join('') +
+    Array.from({ length: 35 }, (_, i) => {
+      const day = i + 1
+      if (day > 30) return '<div class="cell empty"></div>'
+      if (day === 1 || day === 29) return `<div class="cell visit">${day}<span class="ev">${ico('stetho')}진료</span></div>`
+      return `<div class="cell">${day}${CALLS.includes(day) ? `<span class="ev callev" data-call>${ico('phone')}AI 전화</span>` : ''}</div>`
+    }).join('')
+  const callEls = $$('[data-call]', grid)
+  const CUTS = [
+    { wk: 2, ai: '주사 맞고 속은 좀 괜찮으세요?', me: '조금 메스꺼운데 참을 만해요.', rec: '체중 80.6kg · 메스꺼움 3/10 · 식욕 3', w: 2 },
+    { wk: 10, ai: '오늘 단백질은 몇 끼 챙기셨어요?', me: '두 끼요. 점심엔 닭가슴살 먹었어요.', rec: '체중 75.8kg · 단백질 2끼 · 식욕 3', w: 10 },
+    { wk: 18, ai: '이번 주 근력 운동은 몇 번 하셨어요?', me: '두 번 했어요. 스쿼트 위주로요.', rec: '체중 72.1kg · 근력 운동 2회 · 수면 7시간', w: 18 },
+  ]
+  const box = $('#s3calls'), tl = $('#s3tl')
+  box.innerHTML = CUTS.map((c, i) => `<div data-cut="${i}" style="position:absolute;inset:0;display:flex;flex-direction:column;gap:12px;justify-content:center">
+    <div class="pill info" style="align-self:center;background:#1E2846;color:#AFC0F7;font-size:14px;height:30px">투약 ${c.wk}주차</div>
+    <div class="bb" data-b="ai"><span class="who">AI 코치</span>${c.ai}</div><div class="bb me" data-b="me"><span class="who">다은</span>${c.me}</div></div>`).join('')
+  tl.innerHTML = CUTS.map((c, i) => `<div data-tl="${i}" style="display:grid;grid-template-columns:96px 104px minmax(0,1fr);gap:12px;padding:12px 0;border-top:${i ? '1px solid var(--div)' : '0'};align-items:center;font-size:15px">
+    <span class="small">투약 ${c.wk}주차</span><span class="pill gray" style="justify-self:start">AI 전화</span><span><b>${c.rec}</b></span></div>`).join('')
+  const T0 = 3.6, CUT = 3.7
+  SCENES.push({
+    id: 's3', title: '투약 중 통화', dur: 15, cues: [0, 3.6, 7.3, 11],
+    beams: CUTS.map((c, i) => ({ from: () => $(`[data-cut="${i}"] [data-b="me"]`), to: () => $(`[data-tl="${i}"]`, tl), t: T0 + i * CUT + 1.9, d: 1.1, hold: 0.4, label: '자동 기록', bend: -60 })),
+    render(t) {
+      const ck = P(t, 0, 0.5), cout = P(t, 3.1, 0.5, eio)
+      const cal = $('#s3cal'); cal.style.opacity = ck * (1 - cout); cal.style.transform = `scale(${lerp(1, 0.92, cout)})`; on(cal, ck * (1 - cout) > 0)
+      callEls.forEach((e, i) => vis(e, t, 0.6 + i * 0.25, 0.3, Infinity, 8))
+      const main = $('#s3main'); main.style.opacity = P(t, 3.3, 0.5); on(main, t > 3.3)
+      // three call cuts
+      let wk = 2
+      CUTS.forEach((c, i) => {
+        const a = T0 + i * CUT, el = $(`[data-cut="${i}"]`)
+        const v = vis(el, t, a, 0.3, i < 2 ? a + CUT - 0.3 : Infinity, 10)
+        vis($('[data-b="ai"]', el), t, a + 0.15, 0.3); vis($('[data-b="me"]', el), t, a + 1.0, 0.3)
+        vis($(`[data-tl="${i}"]`, tl), t, a + 3.0, 0.4, Infinity, 8)
+        if (t >= a) wk = c.wk
+      })
+      $('#s3wk').textContent = `통화 중 · 투약 ${wk}주차`
+      $('#s3wkpill').textContent = `투약 ${t < T0 ? 2 : Math.round(lerp(2, 23, clamp((t - T0) / (CUT * 3 + 0.4))))}주차`
+      // weight line grows through week 23
+      const wk2 = clamp((t - T0 + 0.2) / (CUT * 3 + 0.6)) * 23
+      const n = Math.floor(wk2), fr = wk2 - n
+      const x = (i) => 50 + (i / 27) * 750, y = (v) => 20 + ((83 - v) / 14) * 200
+      const ptsW = WT.slice(0, n + 1).map((v, i) => [x(i), y(v)])
+      if (n < 23) ptsW.push([x(n + fr), y(lerp(WT[n], WT[n + 1], fr))])
+      const cur = ptsW[ptsW.length - 1]
+      const callDots = CUTS.filter((c) => c.w <= wk2).map((c) => `<circle cx="${x(c.w)}" cy="${y(WT[c.w])}" r="7" fill="#fff" stroke="#2F5BD3" stroke-width="3"/>`).join('')
+      $('#s3chart').innerHTML = [83, 79, 75, 71].map((v) => `<line x1="50" x2="800" y1="${y(v)}" y2="${y(v)}" stroke="#EDEDEA"/><text x="40" y="${y(v) + 5}" font-size="13" fill="#9A9A95" text-anchor="end">${v}</text>`).join('') +
+        `<line x1="${x(24)}" x2="${x(24)}" y1="10" y2="225" stroke="#D6D6D2" stroke-dasharray="4 5"/><text x="${x(24)}" y="245" font-size="13" fill="#9A9A95" text-anchor="middle">24주</text>
+        <text x="${x(0)}" y="245" font-size="13" fill="#9A9A95">0주</text>
+        <polyline points="${ptsW.map((p) => p.join(',')).join(' ')}" fill="none" stroke="#2F5BD3" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>${callDots}
+        <circle cx="${cur[0]}" cy="${cur[1]}" r="6" fill="#2F5BD3"/>`
+      $('#s3wnow').textContent = `${lerp(WT[n], WT[Math.min(27, n + 1)], n < 23 ? fr : 0).toFixed(1)}kg · ${Math.round(wk2)}주차`
+    },
+  })
+}
+
+/* ---------- S4 · 투약 종료 → 단약 3주차 → 전화 (8s) ---------- */
+{
+  const L = 160, R = 1760, X = (w) => ((w / 30) * (R - L))
+  SCENES.push({
+    id: 's4', title: '단약 3주차', dur: 8, cues: [0, 1.6, 3.0, 4.8],
+    render(t) {
+      const out = P(t, 4.6, 0.5, eio)
+      const tl = $('#s4tl'); tl.style.opacity = 1 - out; on(tl, out < 1)
+      vis($('#s4head'), t, 0, 0.5)
+      const w = t < 1.6 ? lerp(18, 24, P(t, 0.3, 1.3, eio)) : lerp(24, 27, P(t, 2.2, 1.0, eio))
+      $('#s4seg1').style.left = 0; $('#s4seg1').style.width = X(Math.min(w, 24)) + 'px'
+      $('#s4seg2').style.left = X(24) + 'px'; $('#s4seg2').style.width = Math.max(0, X(w) - X(24)) + 'px'
+      $('#s4m24').style.left = X(24) + 'px'; $('#s4m24').style.opacity = P(t, 1.5, 0.3)
+      $('#s4ph').style.left = X(w) + 'px'
+      $('#s4phl').textContent = w < 23.95 ? `투약 ${Math.round(w)}주차` : w < 24.3 ? '투약 종료' : `단약 ${Math.max(1, Math.round(w - 24))}주차`
+      $('#s4phl').style.background = w < 24 ? 'var(--accent)' : 'var(--danger)'
+      $('#s4ph i').style.background = w < 24 ? 'var(--accent)' : 'var(--danger)'
+      const l24 = $('#s4l24'); l24.style.left = L + X(24) + 'px'; vis(l24, t, 1.5, 0.4, Infinity, 0); l24.style.transform = 'translateX(calc(-100% - 14px))'; l24.style.textAlign = 'right'
+      const l27 = $('#s4l27'); l27.style.left = L + X(27) + 'px'; vis(l27, t, 3.0, 0.4, Infinity, 0); l27.style.transform = 'translateX(-24px)'; l27.style.textAlign = 'left'
+      vis($('#s4note'), t, 3.4, 0.5)
+      // ringing phone
+      const rg = $('#s4ring'); rg.style.opacity = P(t, 4.8, 0.5); on(rg, t > 4.8)
+      const ph = (x) => ((t * 1.2 + x) % 1)
+      ;[['#s4r1', 0], ['#s4r2', 0.5]].forEach(([s, o]) => { const q = ph(o); $(s).style.transform = `scale(${1 + q * 0.9})`; $(s).style.opacity = 1 - q })
+      $('#s4acc').style.transform = `scale(${1 + Math.max(0, Math.sin(t * 9)) * 0.06})`
+      vis($('#s4ringtx'), t, 5.4, 0.5)
+    },
+  })
+}
+
+/* ---------- S5 · 핵심 통화 (46s) ---------- */
+{
+  const ANSWER = 1.7
+  // marks: phrase in the line → which record field it fills, and when it is caught
+  const LINES = [
+    { who: 'ai', a: 2.2, b: 6.6, text: '다은 님, 약 끝내신 지 3주째네요. 오늘 저녁 체크 2분이면 끝나요. 괜찮으세요?' },
+    { who: 'me', a: 6.9, b: 7.7, text: '네.' },
+    { who: 'ai', a: 8.1, b: 10.0, text: '오늘 아침 체중 재셨어요?' },
+    { who: 'me', a: 10.3, b: 13.2, text: '71.4요… 지난주보다 좀 늘었어요.', marks: [{ ph: '71.4요', f: 'weight', chip: '체중 71.4kg', t: 11.0 }] },
+    { who: 'ai', a: 13.6, b: 16.3, text: '요즘 식욕은 0부터 10 중에 몇 정도세요?' },
+    { who: 'me', a: 16.6, b: 22.5, text: '8이요. 약 끊고 나서 저녁만 되면 너무 배고파요. 이번 주에 야식을 세 번 먹었어요.', marks: [{ ph: '8이요.', f: 'appetite', chip: '식욕 8/10', t: 17.1 }, { ph: '저녁만 되면 너무 배고파요.', f: 'said', chip: '“저녁만 되면 너무 배고파요”', t: 19.3 }, { ph: '야식을 세 번', f: 'snack', chip: '야식 3회', t: 21.4 }] },
+    { who: 'ai', a: 22.9, b: 27.5, text: '약을 끊으면 식욕이 돌아오는 건 흔한 일이에요. 다은 님 의지 문제가 아니에요.' },
+    { who: 'ai', a: 27.9, b: 29.7, text: '잠은 몇 시간 정도 주무세요?' },
+    { who: 'me', a: 30.0, b: 32.3, text: '야근 때문에 다섯 시간쯤이요.', marks: [{ ph: '다섯 시간쯤', f: 'sleep', chip: '수면 5시간', t: 31.0 }] },
+    { who: 'ai', a: 32.7, b: 35.1, text: '이번 주 근력 운동은 몇 번 하셨어요?' },
+    { who: 'me', a: 35.4, b: 37.3, text: '…한 번도 못 했어요.', marks: [{ ph: '한 번도 못 했어요.', f: 'strength', chip: '근력 운동 0회', t: 36.2 }] },
+    { who: 'ai', a: 37.9, b: 42.2, text: '오늘 내용은 담당 원장님께 전달할게요. 확인하시면 앱으로 안내드릴게요.' },
+  ]
+  const FLY = 1.0
+  const log = $('#s5log')
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+  const words = (s) => s.split(/(\s+)/).map((w) => (/^\s+$/.test(w) ? w : `<span class="w">${esc(w)}</span>`)).join('')
+  LINES.forEach((ln, i) => {
+    let html = '', rest = ln.text
+    for (const m of ln.marks || []) {
+      const at = rest.indexOf(m.ph)
+      html += words(rest.slice(0, at)) + `<mark data-m="${m.f}">${words(m.ph)}</mark>`
+      rest = rest.slice(at + m.ph.length)
+    }
+    html += words(rest)
+    const el = document.createElement('div'); el.className = 'bb' + (ln.who === 'me' ? ' me' : ''); el.dataset.line = i
+    el.innerHTML = `<span class="who">${ln.who === 'me' ? '다은' : 'AI 코치'}</span>${html}`
+    log.appendChild(el); ln.el = el; ln.ws = $$('.w', el)
+  })
+  const MARKS = LINES.flatMap((l) => (l.marks || []).map((m) => ({ ...m, line: l })))
+  const fillAt = (f) => { const m = MARKS.find((x) => x.f === f); return m.t + 0.25 + FLY }
+  const RULES = [{ r: 1, t: fillAt('weight') + 0.5 }, { r: 2, t: fillAt('appetite') + 0.5 }, { r: 3, t: fillAt('strength') + 0.5 }]
+  const VERDICT = 39.2, END = 42.7
+  const SPARK = { weight: WT.slice(20), appetite: AP.slice(20) }
+  SCENES.push({
+    id: 's5', title: '핵심 통화', dur: 46, cues: [0, 2.2, 8.1, 10.3, 13.6, 16.6, 22.9, 27.9, 32.7, 37.9, VERDICT, END],
+    taps: [{ t: ANSWER, at: '#s5acc' }],
+    beams: [{ from: '#s5verdict', to: [1990, 560], t: END + 0.5, d: 1.6, hold: 0.6, label: '원장님 대시보드로 전달', warn: true, bend: -40 }],
+    render(t) {
+      const root = $('#s5')
+      views(root, t, [[0, 'ring'], [ANSWER + 0.15, 'talk'], [END, 'ended']])
+      const q = (t * 1.2) % 1; $('#s5r1').style.transform = `scale(${1 + q * 0.9})`; $('#s5r1').style.opacity = 1 - q
+      const sec = Math.max(0, Math.floor(clamp(t - ANSWER, 0, END - ANSWER) * 118 / (END - ANSWER))); $('#s5timer').textContent = `통화 중 · ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
+      // bubbles: show started lines, reveal words over the speaking window, smooth-scroll new ones in
+      let newest = null
+      LINES.forEach((ln) => {
+        const shown = t >= ln.a
+        ln.el.style.display = shown ? '' : 'none'
+        if (!shown) return
+        newest = ln
+        const k = clamp((t - ln.a) / ((ln.b - ln.a) * 0.92))
+        const n = Math.ceil(k * ln.ws.length)
+        ln.ws.forEach((w, i) => (w.style.opacity = i < n ? 1 : 0.0))
+        ln.el.style.opacity = 1
+      })
+      const inner = $('#s5log')
+      if (newest) { const h = newest.el.offsetHeight + 10, k = P(t, newest.a, 0.35, eio); inner.style.transform = `translateY(${((1 - k) * h).toFixed(1)}px)`; newest.el.style.opacity = k }
+      // highlights
+      MARKS.forEach((m) => { const el = $(`mark[data-m="${m.f}"]`, m.line.el); el.classList.toggle('hit', t >= m.t) })
+      // who is speaking
+      const speaking = LINES.find((l) => t >= l.a && t <= l.b)
+      const bars = $('#s5bars'); bars.classList.toggle('me', speaking?.who === 'me')
+      $$('i', bars).forEach((b, i) => (b.style.height = (speaking ? 6 + Math.abs(Math.sin(t * 7 + i * 1.3)) * 20 : 5) + 'px'))
+      $('#s5who').textContent = speaking ? (speaking.who === 'me' ? '다은 님 말하는 중' : 'AI 코치 말하는 중') : '듣는 중'
+      $('#s5end').style.opacity = 1
+      // record card
+      vis($('#s5rec'), t, 0.3, 0.6, Infinity, 20)
+      const state = $('#s5state')
+      if (t >= END + 0.3) { state.className = 'pill ok dot'; state.textContent = '차트에 자동 저장됨 · 21:02' }
+      else if (t >= ANSWER) { state.className = 'pill info dot'; state.textContent = '통화 중 · 듣고 기록하는 중' }
+      else { state.className = 'pill gray dot'; state.textContent = '전화 거는 중' }
+      $$('.rf', root).forEach((f) => {
+        const key = f.dataset.f, at = fillAt(key), filled = t >= at
+        f.querySelector('.ph').hidden = filled
+        $$('.v,.qv,.s', f).forEach((x) => (x.hidden = !filled))
+        f.className = 'rf' + (filled ? (key === 'appetite' ? ' bad' : key === 'weight' || key === 'strength' || key === 'snack' ? ' mid' : ' filled') : '')
+        let fl = f.querySelector('.flash'); if (!fl) { fl = document.createElement('i'); fl.className = 'flash'; f.appendChild(fl) }
+        fl.style.opacity = filled ? 1 - P(t, at, 1.2, (x) => x) : 0
+        const pk = P(t, at, 0.35); f.style.transform = filled ? `scale(${1 + Math.sin(pk * Math.PI) * 0.035})` : ''
+        const v = f.querySelector('.v')
+        if (v && key === 'weight') v.firstChild.textContent = filled ? lerp(70.0, 71.4, P(t, at, 0.6)).toFixed(1) : '71.4'
+        // sparkline for trend fields
+        let sp = f.querySelector('svg.spark')
+        if (SPARK[key] && filled) {
+          if (!sp) { sp = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); sp.setAttribute('class', 'spark'); sp.setAttribute('viewBox', '0 0 300 34'); sp.setAttribute('preserveAspectRatio', 'none'); f.appendChild(sp) }
+          const d = SPARK[key], mn = Math.min(...d), mx = Math.max(...d), xx = (i) => 4 + (i / (d.length - 1)) * 292, yy = (v) => 30 - ((v - mn) / (mx - mn || 1)) * 26
+          sp.innerHTML = `<line x1="${xx(4)}" x2="${xx(4)}" y1="0" y2="34" stroke="#9A9A95" stroke-dasharray="3 3"/><polyline points="${d.map((v, i) => xx(i) + ',' + yy(v)).join(' ')}" fill="none" stroke="${key === 'appetite' ? '#B42318' : '#B4500B'}" stroke-width="2.5"/><circle cx="${xx(d.length - 1)}" cy="${yy(d[d.length - 1])}" r="4" fill="${key === 'appetite' ? '#B42318' : '#B4500B'}"/>`
+          sp.style.opacity = P(t, at + 0.3, 0.5)
+        } else if (sp) sp.style.opacity = 0
+      })
+      RULES.forEach((r) => { const el = $(`.rule[data-r="${r.r}"]`, root); el.classList.toggle('on', t >= r.t); el.querySelector('.bx').style.transform = t >= r.t ? `scale(${1 + Math.sin(P(t, r.t, 0.3) * Math.PI) * 0.25})` : '' })
+      vis($('#s5verdict'), t, VERDICT, 0.5, Infinity, 16)
+      vis($('#s5wont'), t, VERDICT + 0.8, 0.5, Infinity, 8)
+      MARKS.forEach((m) => drawFly(t, { t: m.t + 0.25, d: FLY, text: m.chip, from: () => $(`mark[data-m="${m.f}"]`, m.line.el), to: () => $(`.rf[data-f="${m.f}"]`, root) }))
+    },
+  })
+}
+
+/* ---------- S6 · 대시보드 (21s) ---------- */
+{
+  const ROWS = [
+    ['정다은', '34세 · 위고비', '<span class="pill warn">단약 3주차</span>', '오늘 21:00 · 체중 70.6 · 식욕 6', '<span class="pill gray">안정</span>', 'da'],
+    ['이서연', '41세 · 마운자로', '<span class="pill info">투약 12주차</span>', '오늘 20:30 · 체중 −0.6kg · 식욕 3', '<span class="pill gray">안정</span>'],
+    ['박지훈', '38세 · 위고비', '<span class="pill info">투약 20주차</span>', '오늘 19:50 · 메스꺼움 2/10', '<span class="pill gray">안정</span>'],
+    ['최유나', '29세 · 위고비', '<span class="pill warn">단약 2개월</span>', '어제 · 체중 유지 · 근력 운동 2회', '<span class="pill gray">안정</span>'],
+    ['한도윤', '45세 · 마운자로', '<span class="pill info">투약 5주차</span>', '어제 · 변비 · 식욕 2', '<span class="pill gray">안정</span>'],
+    ['오세린', '33세 · 위고비', '<span class="pill warn">단약 4개월</span>', '어제 · 체중 −0.2kg · 수면 7시간', '<span class="pill gray">안정</span>'],
+  ]
+  const box = $('#s6rows')
+  box.innerHTML = ROWS.map((r, i) => `<div class="prow" data-p="${i}"><div class="nm"><b>${r[0]}</b><small>${r[1]}</small></div><div>${r[2]}</div><div class="why">${r[3]}</div><div>${r[4]}</div></div>`).join('')
+  const da = $('[data-p="0"]', box), rows = $$('.prow', box)
+  const ARRIVE = 1.4, OPEN = 5.2, REQ = 12.6, SEND = 18.4
+  const x = (i) => 56 + (i / 27) * 820
+  SCENES.push({
+    id: 's6', title: '대시보드 · 내원 요청', dur: 21, cues: [0, ARRIVE, 3.2, OPEN, 8, REQ, 14.2, 15.6, SEND],
+    beams: [{ from: [-60, 560], to: () => $('.nm', da), t: 0.1, d: 1.3, hold: 0.3, label: 'AI 전화 기록 도착', warn: true, bend: -60 }, { from: '#s6send', to: [1990, 600], t: SEND + 0.3, d: 1.4, hold: 0.5, label: '내원 요청 → 환자 앱', bend: -60 }],
+    mouse: [{ t: 3.6, at: () => $('.nm', da) }, { t: OPEN - 0.3, at: () => $('.nm', da), click: true }, { t: 10.5, at: '#s6w' }, { t: REQ, at: '#s6req', click: true }, { t: 13.6, at: () => $$('#s6slots .slot')[0], click: true }, { t: 14.2, at: () => $$('#s6slots .slot')[1], click: true }, { t: 14.8, at: () => $$('#s6slots .slot')[2], click: true }, { t: 15.6, at: '#s6tag', click: true }, { t: SEND, at: '#s6send', click: true, hide: SEND + 1 }],
+    render(t) {
+      const root = $('#s6')
+      // list view: 정다은 row flips to 확인 필요 and rises to the top
+      const lv = $('#s6listv'), cv = $('#s6chartv'), sw = P(t, OPEN, 0.45, eio)
+      lv.style.opacity = 1 - sw; on(lv, sw < 1); cv.style.opacity = sw; on(cv, sw > 0); cv.style.transform = `translateX(${(1 - sw) * 40}px)`
+      $('#s6url').textContent = t < OPEN ? 'keepfit.app/clinic · 오늘 확인할 환자' : 'keepfit.app/clinic · 정다은 차트'
+      const hit = t >= ARRIVE
+      $$('[data-cnt]', root).forEach((c) => (c.style.display = hit ? '' : 'none'))
+      $('#s6need').textContent = `확인 필요 ${hit ? 1 : 0}명`
+      $('.why', da).innerHTML = hit ? '<b style="color:var(--danger)">식욕 8/10 (지난주 6)</b> · 체중 +1.4kg (단약 후) · 근력 0회' : '어제 · 체중 70.6 · 식욕 6'
+      da.children[3].innerHTML = hit ? '<span class="pill danger dot">확인 필요</span>' : '<span class="pill gray">안정</span>'
+      da.style.background = hit ? `rgb(${Math.round(lerp(255, 253, 1))},${Math.round(lerp(255, 236, P(t, ARRIVE, 0.5)))},${Math.round(lerp(255, 234, P(t, ARRIVE, 0.5)))})` : ''
+      // order: rise from row 3 to row 0
+      const rh = 72, rise = P(t, ARRIVE + 0.4, 0.8, eio)
+      const startIdx = 3
+      rows.forEach((r, i) => {
+        if (i === 0) { r.style.transform = `translateY(${lerp(startIdx, 0, rise) * rh}px)`; r.style.zIndex = 2; r.style.boxShadow = rise > 0 && rise < 1 ? '0 10px 30px rgba(0,0,0,.12)' : '' }
+        else { const before = i <= startIdx ? i - 1 : i; const after = i; r.style.transform = `translateY(${(lerp(before, after, rise) - i + (i <= startIdx ? 0 : 0)) * rh}px)` }
+      })
+      // chart view graphs
+      const y = (v) => 18 + ((83 - v) / 14) * 230
+      const reveal = P(t, OPEN + 0.3, 1.8, (k) => k), nW = Math.max(2, Math.round(reveal * 28))
+      const pre = WT.slice(0, Math.min(nW, 25)).map((v, i) => `${x(i)},${y(v)}`).join(' ')
+      const post = nW > 24 ? WT.slice(24, nW).map((v, i) => `${x(24 + i)},${y(v)}`).join(' ') : ''
+      const em = P(t, OPEN + 2.4, 0.6)
+      $('#s6w').innerHTML = [82, 78, 74, 70].map((v) => `<line x1="56" x2="876" y1="${y(v)}" y2="${y(v)}" stroke="#EDEDEA"/><text x="46" y="${y(v) + 5}" font-size="13" fill="#9A9A95" text-anchor="end">${v}</text>`).join('') +
+        `<rect x="${x(24)}" y="6" width="${x(27) - x(24) + 20}" height="250" fill="#FDF1E7" opacity="${em}"/>
+        <line x1="${x(24)}" x2="${x(24)}" y1="6" y2="256" stroke="#1A1A1A" stroke-width="2" stroke-dasharray="5 5"/>
+        <text x="${x(24) - 8}" y="276" font-size="14" font-weight="700" fill="#1A1A1A" text-anchor="end">24주 · 투약 종료</text>
+        <text x="${x(0)}" y="276" font-size="13" fill="#9A9A95">0주 · 첫 처방 82.0kg</text>
+        <polyline points="${pre}" fill="none" stroke="#2F5BD3" stroke-width="3.5" stroke-linejoin="round"/>
+        ${post ? `<polyline points="${x(24)},${y(70)} ${post}" fill="none" stroke="#B42318" stroke-width="4" stroke-linejoin="round"/>` : ''}
+        ${nW >= 28 ? `<circle cx="${x(27)}" cy="${y(71.4)}" r="7" fill="#B42318"/><g opacity="${em}"><rect x="${x(27) - 118}" y="${y(71.4) - 62}" width="128" height="40" rx="10" fill="#B42318"/><text x="${x(27) - 54}" y="${y(71.4) - 36}" font-size="17" font-weight="700" fill="#fff" text-anchor="middle">71.4 · +1.4kg</text></g>` : ''}
+        <circle cx="${x(24)}" cy="${y(70)}" r="5" fill="#1A1A1A" opacity="${nW > 24 ? 1 : 0}"/>`
+      const ay = (v) => 130 - v * 11
+      $('#s6a').innerHTML = `<line x1="56" x2="876" y1="${ay(7)}" y2="${ay(7)}" stroke="#B42318" stroke-dasharray="4 4" opacity=".7"/><text x="46" y="${ay(7) + 5}" font-size="13" fill="#B42318" text-anchor="end">7</text>
+        <line x1="${x(24)}" x2="${x(24)}" y1="0" y2="134" stroke="#1A1A1A" stroke-width="2" stroke-dasharray="5 5"/>` +
+        AP.map((v, i) => { const show = i < nW; const c = i >= 25 ? (v >= 7 ? '#B42318' : '#E59A62') : '#9AAEE6'; return show ? `<rect x="${x(i) - 10}" y="${ay(v)}" width="20" height="${v * 11}" rx="4" fill="${c}"/>` : '' }).join('') +
+        (nW >= 28 ? `<text x="${x(27)}" y="${ay(8) - 8}" font-size="15" font-weight="700" fill="#B42318" text-anchor="middle" opacity="${em}">8</text>` : '')
+      vis($('#s6sum'), t, OPEN + 0.6, 0.5, Infinity, 12)
+      // request sheet
+      const sh = $('#s6sheet'), sk = P(t, REQ + 0.2, 0.45, eio)
+      sh.style.opacity = sk; on(sh, sk > 0); sh.style.transform = `translateY(${(1 - sk) * 60}px)`
+      const sl = $$('#s6slots .slot'); [13.6, 14.2, 14.8].forEach((a, i) => sl[i].classList.toggle('sel', t >= a))
+      $('#s6tag').classList.toggle('on', t >= 15.6)
+      type($('#s6msg'), '다은 님, 약 끊은 뒤 식욕이 오르는 건 흔해요. 지금 잡으면 충분해요. 이번 주에 한번 들러 주세요.', t, 15.7, 1.9)
+      const send = $('#s6send'); send.textContent = t >= SEND + 0.1 ? '✓ 보냄 · 환자 확인 대기' : '보내기'; send.style.background = t >= SEND + 0.1 ? 'var(--ok)' : ''
+    },
+  })
+}
+
+/* ---------- S7 · 환자 앱 예약 (13s) ---------- */
+{
+  const steps = $('#s7steps')
+  const ST = [['보냄', '10/12 21:24 · 가능한 시간 3개 + 원장님 메시지'], ['환자 확인', '알림을 눌러 읽었어요'], ['예약 확정', '10/15 (목) 오후 7:30']]
+  steps.innerHTML = ST.map(([a, b], i) => `<div data-s="${i}" style="display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;padding:12px 0;align-items:center"><span class="bx" style="width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px">${i + 1}</span><div><b style="font-size:16px">${a}</b><div class="small" style="font-size:14px">${b}</div></div></div>`).join('')
+  const wk = $('#s7week')
+  const DAYS = [['10/13', '화', ['14:00 이서연', '19:00 박지훈']], ['10/14', '수', ['10:30 한도윤']], ['10/15', '목', ['18:30 최유나', 'BOOK']], ['10/16', '금', ['11:00 오세린']], ['10/17', '토', ['10:00 신규 상담']]]
+  wk.innerHTML = DAYS.map(([d, w, aps]) => `<div style="border:1px solid var(--div);border-radius:14px;padding:12px;display:grid;gap:8px;align-content:start;min-height:200px"><b style="font-size:14px">${d} <span class="small">${w}</span></b>${aps.map((a) => (a === 'BOOK' ? '<div data-book style="border-radius:10px;padding:8px 10px;font-size:13px;background:var(--accent);color:#fff;font-weight:600">19:30 정다은<br><span style="font-weight:400;opacity:.85">단약 후 점검</span></div>' : `<div style="border-radius:10px;padding:8px 10px;font-size:13px;background:var(--bg)">${a}</div>`)).join('')}</div>`).join('')
+  const READ = 2.4, PICK = 5.2, BOOK = 6.8
+  SCENES.push({
+    id: 's7', title: '환자 앱 · 내원 예약', dur: 13, cues: [0, 0.7, READ, PICK, BOOK, 9.6],
+    taps: [{ t: 2.1, at: '#s7notif' }, { t: PICK, at: () => $$('#s7slots .slot')[1] }, { t: BOOK, at: '#s7book' }],
+    beams: [{ from: [-60, 400], to: '#s7notif', t: 0, d: 0.9, hold: 0.2, label: '내원 요청', bend: -40 }, { from: '#s7notif', to: () => $('[data-s="1"] .bx'), t: READ, d: 1.0, hold: 0.3, label: '읽음', bend: -80 }, { from: '#s7book', to: () => $('[data-s="2"] .bx'), t: BOOK + 0.4, d: 1.3, hold: 0.6, label: '예약 확정', bend: -120 }],
+    render(t) {
+      const root = $('#s7')
+      views(root, t, [[0, 'home'], [READ + 0.3, 'alert'], [BOOK + 0.4, 'done']])
+      const nt = $('#s7notif'), nk = P(t, 0.8, 0.45), no = P(t, READ + 0.3, 0.3)
+      nt.style.opacity = nk * (1 - no); nt.style.transform = `translateY(${(1 - nk) * -40}px)`; on(nt, nk * (1 - no) > 0)
+      const sl = $$('#s7slots .slot'); sl.forEach((s, i) => s.classList.toggle('sel', i === 1 && t >= PICK))
+      const bk = $('#s7book'); bk.textContent = t >= PICK ? '10/15 (목) 오후 7:30 예약하기' : '시간을 골라 주세요'; bk.style.opacity = t >= PICK ? 1 : 0.45
+      // dashboard steps
+      const done = [0, READ + 1.0, BOOK + 1.7]
+      $$('[data-s]', steps).forEach((s, i) => {
+        const ok = t >= done[i], bx = s.querySelector('.bx')
+        bx.style.background = ok ? (i === 2 ? 'var(--accent)' : 'var(--ok)') : ''; bx.style.borderColor = ok ? 'transparent' : ''; bx.style.color = ok ? '#fff' : 'var(--faint)'
+        bx.textContent = ok ? '✓' : i + 1
+        s.style.opacity = ok ? 1 : 0.45
+        s.style.background = i > 0 && ok ? `rgba(233,238,251,${1 - P(t, done[i], 1.2)})` : ''
+      })
+      const b = $('[data-book]', wk); const bkk = P(t, BOOK + 1.7, 0.5)
+      b.style.opacity = bkk; b.style.transform = `scale(${0.9 + bkk * 0.1})`
+    },
+  })
+}
+
+/* ---------- S8 · 엔딩 (4s) ---------- */
+SCENES.push({
+  id: 's8', title: '엔딩', dur: 4, cues: [0],
+  render(t) { vis($('#s8end'), t, 0, 0.7, Infinity, 0) },
+})
+
+/* ============================== player ============================== */
+const params = new URLSearchParams(location.search)
+const REC = params.has('rec')
+if (REC) document.body.classList.add('rec')
+if (params.has('clean')) document.body.classList.add('clean')
+const TOTAL = SCENES.reduce((a, s) => a + s.dur, 0)
+let si = 0, t = 0, playing = false, playAll = false, last = 0
+
+function fit() {
+  SCALE = Math.min(innerWidth / W, (innerHeight - (REC || document.body.classList.contains('nohud') ? 0 : 44)) / H)
+  stage.style.transform = `translate(${(innerWidth - W * SCALE) / 2}px,${Math.max(0, (innerHeight - (REC ? 0 : 44) - H * SCALE) / 2)}px) scale(${SCALE})`
+}
+function render() {
+  const s = SCENES[si]
+  $$('.scene').forEach((el) => el.classList.toggle('on', el.id === s.id))
+  fxsvg.innerHTML = ''; fxhtml.innerHTML = ''
+  s.render(t)
+  drawBeams(t, s.beams); drawTaps(t, s.taps, fxhtml); drawMouse(t, s.mouse)
+  if (!REC) hud()
+}
+function seek(i, tt) { si = clamp(i, 0, SCENES.length - 1); t = clamp(tt, 0, SCENES[si].dur); render() }
+function tick(now) {
+  if (playing) {
+    t += Math.min(0.1, (now - last) / 1000)
+    if (t >= SCENES[si].dur) { if (playAll && si < SCENES.length - 1) { si++; t = 0 } else { t = SCENES[si].dur; playing = false } }
+    render()
+  }
+  last = now
+  requestAnimationFrame(tick)
+}
+/* HUD */
+const hudsc = $('#hudsc')
+hudsc.innerHTML = SCENES.map((s, i) => `<button data-i="${i}" title="${s.title}">${i + 1} ${s.title}</button>`).join('')
+hudsc.onclick = (e) => { const b = e.target.closest('button'); if (b) { playing = false; seek(+b.dataset.i, 0) } }
+$('#hplay').onclick = () => toggle()
+$('#hall').onclick = () => { playAll = true; seek(0, 0); playing = true }
+$('#hbar').onclick = (e) => { const r = e.currentTarget.getBoundingClientRect(); seek(si, ((e.clientX - r.left) / r.width) * SCENES[si].dur) }
+function hud() {
+  $$('button', hudsc).forEach((b, i) => b.classList.toggle('on', i === si))
+  $('#hplay').textContent = playing ? '❚❚ 정지' : '▶ 재생'
+  $('#htime').textContent = `${si + 1}. ${t.toFixed(1)}s / ${SCENES[si].dur}s`
+  $('#hprog').style.width = (t / SCENES[si].dur) * 100 + '%'
+  const bar = $('#hbar'); if (bar.dataset.s != si) { bar.dataset.s = si; $$('u', bar).forEach((u) => u.remove()); SCENES[si].cues.forEach((c) => { const u = document.createElement('u'); u.style.left = (c / SCENES[si].dur) * 100 + '%'; bar.appendChild(u) }) }
+}
+function toggle() { if (!playing && t >= SCENES[si].dur) t = 0; playing = !playing; playAll = playAll && playing; render() }
+function step(dir) {
+  playing = false
+  const cues = [...SCENES[si].cues, SCENES[si].dur]
+  if (dir > 0) { const n = cues.find((c) => c > t + 0.05); if (n === undefined || n >= SCENES[si].dur) { if (si < SCENES.length - 1) seek(si + 1, 0) } else seek(si, n); return }
+  const p = [...cues].reverse().find((c) => c < t - 0.05); if (p === undefined) { if (si > 0) seek(si - 1, [...SCENES[si - 1].cues].pop()) } else seek(si, p)
+}
+// → / ← jump to the start of the next / previous action and pause there
+addEventListener('keydown', (e) => {
+  if (e.key === ' ') { e.preventDefault(); toggle() }
+  else if (e.key === 'ArrowRight') step(1)
+  else if (e.key === 'ArrowLeft') step(-1)
+  else if (/^[1-8]$/.test(e.key)) { playing = false; seek(+e.key - 1, 0) }
+  else if (e.key === 'r' || e.key === 'R') { playing = false; seek(si, 0) }
+  else if (e.key === 'h' || e.key === 'H') { document.body.classList.toggle('nohud'); fit() }
+  else if (e.key === 'f' || e.key === 'F') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen() }
+  else if (e.key === 'Enter') { playAll = true; seek(0, 0); playing = true }
+})
+addEventListener('resize', fit)
+fit()
+const start = params.get('scene') ? +params.get('scene') - 1 : 0
+seek(start, +(params.get('t') || 0))
+requestAnimationFrame((n) => { last = n; tick(n) })
+// for the frame-by-frame renderer
+window.film = { scenes: SCENES.map((s) => ({ id: s.id, title: s.title, dur: s.dur })), seek: (i, tt) => seek(i, tt), ready: document.fonts.ready }
+</script>
+</body>
+</html>
